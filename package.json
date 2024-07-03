@@ -1,4 +1,12 @@
 {
-  "name": "redstone-cross-chain-realitio-proxy",
-  "packageManager": "yarn@4.2.1"
+    "name": "@kleros/redstone-cross-chain-realitio-proxy",
+    "version": "0.1.0",
+    "description": "Cross-chain arbitration proxy for Realitio RedStone",
+    "author": "Kleros",
+    "license": "MIT",
+    "private": true,
+    "packageManager": "yarn@4.2.1",
+    "workspaces": [
+        "contracts"
+    ]
 }
