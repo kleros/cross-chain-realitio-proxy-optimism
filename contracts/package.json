@@ -34,6 +34,7 @@
         "typescript": ">=4.5.0"
     },
     "dependencies": {
-        "@kleros/dispute-resolver-interface-contract": "^8.0.0"
+        "@kleros/dispute-resolver-interface-contract": "^8.0.0",
+        "dotenv": "^16.4.5"
     }
 }
