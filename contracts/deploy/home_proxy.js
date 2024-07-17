@@ -1,3 +1,4 @@
+const { toBeHex, toBigInt } = require("ethers");
 const HOME_CHAIN_IDS = [690, 17069];
 // https://redstone.xyz/docs/contract-addresses
 const MESSENGER = "0x4200000000000000000000000000000000000007";
@@ -15,7 +16,7 @@ const paramsByChainId = {
 const metadata =
     '{"tos":"ipfs://QmNV5NWwCudYKfiHuhdWxccrPyxs4DnbLGQace2oMKHkZv/Question_Resolution_Policy.pdf", "foreignProxy":true}'; // Same for all chains.
 
-async function deployHomeProxy({ deployments, getChainId, ethers, config }) {
+function deployHomeProxy({ deployments, getChainId, ethers, config }) {
     console.log(`Running deployment script for home proxy contract on RedStone`);
 
     const { deploy } = deployments;
@@ -43,14 +44,27 @@ async function deployHomeProxy({ deployments, getChainId, ethers, config }) {
 
     const homeProxy = await deploy("RealitioHomeProxyRedStone", {
         from: account.address,
-        args: [realitio, foreignChainId, foreignProxy, metadata, MESSENGER],
+        args: [
+            realitio,
+            foreignChainId,
+            foreignProxy,
+            metadata,
+            applyL1ToL2Alias(foreignProxy),
+            MESSENGER,
+        ],
     });
     const contractAddress = homeProxy.address;
     console.log(`RealitioHomeProxyRedStone was deployed to ${contractAddress}`);
 }
 
+const ADDRESS_MODULO = toBigInt(2) ** toBigInt(160);
+
+function applyL1ToL2Alias(address) {
+    return toBeHex(
+        toBigInt(address) +
+        (toBigInt(L1_TO_L2_ALIAS_OFFSET) % toBigInt(ADDRESS_MODULO))
+    );
+}
 deployHomeProxy.tags = ["HomeChain"];
 deployHomeProxy.skip = async({ getChainId }) =>
     !HOME_CHAIN_IDS.includes(Number(await getChainId()));
-
-module.exports = deployHomeProxy;

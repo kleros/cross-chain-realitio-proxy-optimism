@@ -12,7 +12,6 @@ pragma solidity 0.8.25;
 import "./interfaces/RealitioInterface.sol";
 import {IForeignArbitrationProxy, IHomeArbitrationProxy} from "./interfaces/ArbitrationProxyInterfaces.sol";
 import {ICrossDomainMessenger} from "./interfaces/ICrossDomainMessenger.sol";
-import {AddressAliasHelper} from "./libraries/AddressAliasHelper.sol";
 
 contract RealitioHomeProxyRedStone is IHomeArbitrationProxy {
     // contract for L2 -> L1 communication
@@ -21,6 +20,7 @@ contract RealitioHomeProxyRedStone is IHomeArbitrationProxy {
     /// @dev The address of the Realitio contract (v3.0 required). TRUSTED.
     RealitioInterface public immutable realitio;
     address public immutable foreignProxy; // Address of the proxy on L1.
+    address public immutable foreignProxyAlias; // // Address of the proxy on L1 converted to L2.
     /// @dev ID of the foreign chain, required for Realitio.
     bytes32 public immutable foreignChainId;
 
@@ -50,7 +50,7 @@ contract RealitioHomeProxyRedStone is IHomeArbitrationProxy {
     /// @dev Foreign proxy uses its alias to make calls on L2.
     modifier onlyForeignProxyAlias() virtual {
         require(
-            msg.sender == AddressAliasHelper.applyL1ToL2Alias(foreignProxy),
+            msg.sender == foreignProxyAlias,
             "Can only be called by foreign proxy"
         );
         _;
@@ -62,6 +62,7 @@ contract RealitioHomeProxyRedStone is IHomeArbitrationProxy {
      * @param _foreignChainId The ID of foreign chain (Goerli/Mainnet).
      * @param _foreignProxy Address of the proxy on L1.
      * @param _metadata Metadata for Realitio.
+     * @param _foreignProxyAlias Alias of the proxy on L1.
      * @param _messenger L2 -> L1 communcation contract address
      */
     constructor(
@@ -69,12 +70,14 @@ contract RealitioHomeProxyRedStone is IHomeArbitrationProxy {
         uint256 _foreignChainId,
         address _foreignProxy,
         string memory _metadata,
+        address _foreignProxyAlias,
         address _messenger
     ) {
         realitio = _realitio;
         foreignChainId = bytes32(_foreignChainId);
         foreignProxy = _foreignProxy;
         metadata = _metadata;
+        foreignProxyAlias = _foreignProxyAlias;
         MESSENGER = ICrossDomainMessenger(_messenger);
     }
 

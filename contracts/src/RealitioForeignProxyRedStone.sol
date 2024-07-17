@@ -23,7 +23,7 @@ contract RealitioForeignProxyRedStone is
         type(uint256).max; // The number of choices for the arbitrator.
     uint256 public constant REFUSE_TO_ARBITRATE_REALITIO = type(uint256).max; // Constant that represents "Refuse to rule" in realitio format.
     uint256 public constant MULTIPLIER_DIVISOR = 10000; // Divisor parameter for multipliers.
-    uint32 public constant MIN_GAS_LIMIT = 1500000; // Gas limit of the transaction call. Note some L2 operations consume up to 700000 gas.
+    uint32 public constant MIN_GAS_LIMIT = 200000; // Gas limit of the transaction call. Note some L2 operations consume up to 700000 gas.
 
     /* Storage */
 
@@ -64,14 +64,13 @@ contract RealitioForeignProxyRedStone is
     // contract for L1 -> L2 communication
     ICrossDomainMessenger public MESSENGER;
 
-    address public immutable homeProxy; // Proxy on L2.
+    address public homeProxy; // Proxy on L2.
 
     address public governor; // Governor of the contract (e.g KlerosGovernor).
     IArbitrator public arbitrator; // The address of the arbitrator. TRUSTED.
     bytes public arbitratorExtraData; // The extra data used to raise a dispute in the arbitrator.
     uint256 public metaEvidenceUpdates; // The number of times the meta evidence has been updated. Used to track the latest meta evidence ID.
 
-     
     // The amount to add to arbitration fees to cover for RedStone fees. The leftover will be reimbursed. This is required for Realtio UI.
     // Surplus amount covers submission cost for retryable ticket on L1 + gasLimit * gasPriceBid.
     // Submission cost is based on the length of the passed message and current gas fees. It's usually greatly lower than 0.05 but it's preferred to use this value
@@ -86,8 +85,8 @@ contract RealitioForeignProxyRedStone is
 
     mapping(uint256 => mapping(address => ArbitrationRequest))
         public arbitrationRequests; // Maps arbitration ID to its data. arbitrationRequests[uint(questionID)][requester].
-    mapping(uint256 => DisputeDetails) public disputeIDToDisputeDetails; // Maps external dispute ids to local arbitration ID and requester who was able to complete the arbitration request.
-    mapping(uint256 => bool) public arbitrationIDToDisputeExists; // Whether a dispute has already been created for the given arbitration ID or not.
+    mapping(address => mapping(uint256 => DisputeDetails))
+        public arbitratorDisputeIDToDisputeDetails; // Maps external dispute ids from a particular arbitrator to local arbitration ID and requester who was able to complete the arbitration request.mapping(uint256 => bool) public arbitrationIDToDisputeExists; // Whether a dispute has already been created for the given arbitration ID or not.
     mapping(uint256 => address) public arbitrationIDToRequester; // Maps arbitration ID to the requester who was able to complete the arbitration request.
 
     event RetryableTicketCreated(uint256 indexed ticketId);
@@ -188,7 +187,6 @@ contract RealitioForeignProxyRedStone is
         emit MetaEvidence(metaEvidenceUpdates, _metaEvidence);
     }
 
-    
     /**
      * @notice Changes the surplus amount to cover the RedStone fees.
      * @param _surplus New surplus value.
@@ -225,6 +223,14 @@ contract RealitioForeignProxyRedStone is
         uint256 _loserAppealPeriodMultiplier
     ) external onlyGovernor {
         loserAppealPeriodMultiplier = _loserAppealPeriodMultiplier;
+    }
+
+    /**
+     * @notice Changes homeProxy address by governor only.
+     * @param _homeProxy New homeProxy address.
+     */
+    function changeHomeProxy(address _homeProxy) external onlyGovernor {
+        homeProxy = _homeProxy;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -309,9 +315,9 @@ contract RealitioForeignProxyRedStone is
                 )
             returns (uint256 disputeID) {
                 DisputeDetails
-                    storage disputeDetails = disputeIDToDisputeDetails[
-                        disputeID
-                    ];
+                    storage disputeDetails = arbitratorDisputeIDToDisputeDetails[
+                        address(arbitration.arbitrator)
+                    ][disputeID];
                 disputeDetails.arbitrationID = arbitrationID;
                 disputeDetails.requester = _requester;
 
@@ -628,9 +634,10 @@ contract RealitioForeignProxyRedStone is
      * @param _ruling The ruling given by the arbitrator.
      */
     function rule(uint256 _disputeID, uint256 _ruling) external override {
-        DisputeDetails storage disputeDetails = disputeIDToDisputeDetails[
-            _disputeID
-        ];
+        DisputeDetails
+            storage disputeDetails = arbitratorDisputeIDToDisputeDetails[
+                msg.sender
+            ][_disputeID];
         uint256 arbitrationID = disputeDetails.arbitrationID;
         address requester = disputeDetails.requester;
 
@@ -921,6 +928,14 @@ contract RealitioForeignProxyRedStone is
     function externalIDtoLocalID(
         uint256 _externalDisputeID
     ) external view override returns (uint256) {
-        return disputeIDToDisputeDetails[_externalDisputeID].arbitrationID;
+        // Note that in case of arbitrator's change external dispute from the new arbitrator
+        // will overwrite the external dispute with the same ID from the old arbitrator,
+        // which will make the data related to the old arbitrator's dispute unaccessible in DisputeResolver's UI.
+        // It should be fine since the dispute will be closed anyway.
+        // Ideally we would want to have arbitrator's address as one of the parameters, but we can't break the interface.
+        return
+            arbitratorDisputeIDToDisputeDetails[address(arbitrator)][
+                _externalDisputeID
+            ].arbitrationID;
     }
 }

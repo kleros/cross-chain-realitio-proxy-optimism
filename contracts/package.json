@@ -7,7 +7,8 @@
     "scripts": {
         "build": "hardhat compile",
         "test": "hardhat test",
-        "start": "hardhat node"
+        "start": "hardhat node",
+        "deploy": "hardhat ignition deploy "
     },
     "devDependencies": {
         "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
