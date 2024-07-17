@@ -87,6 +87,8 @@ contract RealitioForeignProxyRedStone is
         public arbitrationRequests; // Maps arbitration ID to its data. arbitrationRequests[uint(questionID)][requester].
     mapping(address => mapping(uint256 => DisputeDetails))
         public arbitratorDisputeIDToDisputeDetails; // Maps external dispute ids from a particular arbitrator to local arbitration ID and requester who was able to complete the arbitration request.mapping(uint256 => bool) public arbitrationIDToDisputeExists; // Whether a dispute has already been created for the given arbitration ID or not.
+    mapping(uint256 => bool) public arbitrationIDToDisputeExists; // Whether a dispute has already been created for the given arbitration ID or not.
+
     mapping(uint256 => address) public arbitrationIDToRequester; // Maps arbitration ID to the requester who was able to complete the arbitration request.
 
     event RetryableTicketCreated(uint256 indexed ticketId);

@@ -292,7 +292,7 @@ describe("Cross-chain arbitration with appeals", () => {
         expect(arbitration[2]).to.equal(2, "Incorrect dispute ID");
 
         const disputeData = await foreignProxy.arbitratorDisputeIDToDisputeDetails(
-            arbitrator.address,
+            arbitrator.target,
             2
         );
         expect(disputeData[0]).to.equal(
