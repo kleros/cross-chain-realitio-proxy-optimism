@@ -1,5 +1,6 @@
 require("dotenv/config");
 require("@nomicfoundation/hardhat-toolbox");
+require("hardhat-deploy");
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -16,9 +17,7 @@ module.exports = {
         sources: "./src",
     },
     networks: {
-        hardhat: {
-            blockGasLimit: 100000000000,
-        },
+
         holesky: {
             chainId: 17000,
             url: `https://ethereum-holesky.publicnode.com`,
@@ -38,6 +37,16 @@ module.exports = {
             chainId: 690,
             url: `https://rpc.redstonechain.com`,
             accounts: [process.env.PRIVATE_KEY],
+        },
+        localhost: {
+            url: `http://127.0.0.1:8545`,
+            chainId: 31337,
+            saveDeployments: true,
+            tags: ["test", "local"],
+            companionNetworks: {
+                home: "localhost",
+                foreign: "localhost",
+            },
         },
     },
 };

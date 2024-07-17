@@ -7,8 +7,10 @@
     "scripts": {
         "build": "hardhat compile",
         "test": "hardhat test",
-        "start": "hardhat node",
-        "deploy": "hardhat ignition deploy "
+        "start": "hardhat node --tags nop",
+        "deploy-local": "hardhat deploy --network localhost --tags HomeChain && hardhat deploy --network localhost --tags ForeignChain",
+        "deploy-staging": "hardhat deploy --network garnet && hardhat deploy --network holesky",
+        "deploy-production": "hardhat deploy --network redstone && hardhat deploy --network mainnet"
     },
     "devDependencies": {
         "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
@@ -28,6 +30,7 @@
         "ethereum-waffle": "^4.0.10",
         "ethers": "^6.4.0",
         "hardhat": "^2.22.6",
+        "hardhat-deploy": "^0.12.4",
         "hardhat-gas-reporter": "^1.0.8",
         "solidity-coverage": "^0.8.1",
         "ts-node": ">=8.0.0",
