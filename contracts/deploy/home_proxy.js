@@ -1,7 +1,8 @@
 const { toBeHex, toBigInt, ethers } = require("ethers");
 // Networks -  Garnet (RedStone testnet), RedStone, localhost
-const HOME_CHAIN_IDS = [17069, 690, 31337];
-// https://redstone.xyz/docs/contract-addresses
+const HOME_CHAIN_IDS = [17069, 690, 31337, 11155420];
+// Redstone Messenger - https://redstone.xyz/docs/contract-addresses
+// Optimism Sepolia Messenger - https://sepolia-optimism.etherscan.io/address/0x4200000000000000000000000000000000000007#code
 const MESSENGER = "0x4200000000000000000000000000000000000007";
 const L1_TO_L2_ALIAS_OFFSET = "0x1111000000000000000000000000000000001111";
 const paramsByChainId = {
@@ -15,6 +16,10 @@ const paramsByChainId = {
     },
     // localhost
     31337: {
+        realitio: "0x0000000000000000000000000000000000000000",
+        foreignChainId: 1,
+    },
+    11155420: {
         realitio: "0x0000000000000000000000000000000000000000",
         foreignChainId: 1,
     },
@@ -32,6 +37,7 @@ async function deployHomeProxy({ deployments, getChainId, ethers, config }) {
         690: config.networks.mainnet,
         17069: config.networks.sepolia,
         31337: config.networks.localhost,
+        11155420: config.networks.optimismSepolia,
     };
 
     const chainId = await getChainId();
