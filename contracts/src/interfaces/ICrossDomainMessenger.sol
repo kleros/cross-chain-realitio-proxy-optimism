@@ -9,9 +9,5 @@ interface ICrossDomainMessenger {
         uint32 _gasLimit
     ) external;
 
-    function baseGas(
-        bytes calldata _message,
-        uint32 _minGasLimit
-    ) external pure returns (uint64);
     function xDomainMessageSender() external view returns (address);
 }

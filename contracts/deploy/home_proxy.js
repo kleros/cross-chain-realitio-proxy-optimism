@@ -51,7 +51,7 @@ async function deployHomeProxy({ deployments, getChainId, ethers, config }) {
     console.log(`Nonce: ${nonce}`);
     const transaction = {
         from: account.address,
-        nonce: nonce,
+        nonce: nonce + 1,
     };
     const foreignProxy = ethers.getCreateAddress(transaction);
     console.log(`Foreign proxy: ${foreignProxy}`);
@@ -60,27 +60,12 @@ async function deployHomeProxy({ deployments, getChainId, ethers, config }) {
 
     const homeProxy = await deploy("RealitioHomeProxyRedStone", {
         from: account.address,
-        args: [
-            realitio,
-            foreignChainId,
-            foreignProxy,
-            metadata,
-            applyL1ToL2Alias(foreignProxy),
-            MESSENGER,
-        ],
+        args: [realitio, foreignChainId, foreignProxy, metadata, MESSENGER],
     });
     const contractAddress = homeProxy.address;
     console.log(`RealitioHomeProxyRedStone was deployed to ${contractAddress}`);
 }
 
-const ADDRESS_MODULO = toBigInt(2) ** toBigInt(160);
-
-function applyL1ToL2Alias(address) {
-    return toBeHex(
-        toBigInt(address) +
-        (toBigInt(L1_TO_L2_ALIAS_OFFSET) % toBigInt(ADDRESS_MODULO))
-    );
-}
 deployHomeProxy.tags = ["HomeChain"];
 deployHomeProxy.skip = async({ getChainId }) =>
     !HOME_CHAIN_IDS.includes(Number(await getChainId()));

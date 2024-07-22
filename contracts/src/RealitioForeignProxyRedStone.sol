@@ -23,7 +23,6 @@ contract RealitioForeignProxyRedStone is
         type(uint256).max; // The number of choices for the arbitrator.
     uint256 public constant REFUSE_TO_ARBITRATE_REALITIO = type(uint256).max; // Constant that represents "Refuse to rule" in realitio format.
     uint256 public constant MULTIPLIER_DIVISOR = 10000; // Divisor parameter for multipliers.
-    uint32 public constant MIN_GAS_LIMIT = 200000; // Gas limit of the transaction call. Note some L2 operations consume up to 700000 gas.
 
     /* Storage */
 
@@ -62,21 +61,15 @@ contract RealitioForeignProxyRedStone is
     }
 
     // contract for L1 -> L2 communication
-    ICrossDomainMessenger public MESSENGER;
+    ICrossDomainMessenger public messenger;
+    uint32 public min_gas_limit = 1500000; // Gas limit of the transaction call. Note some L2 operations consume up to 700000 gas.
 
-    address public homeProxy; // Proxy on L2.
+    address public immutable homeProxy; // Proxy on L2.
 
     address public governor; // Governor of the contract (e.g KlerosGovernor).
     IArbitrator public arbitrator; // The address of the arbitrator. TRUSTED.
     bytes public arbitratorExtraData; // The extra data used to raise a dispute in the arbitrator.
     uint256 public metaEvidenceUpdates; // The number of times the meta evidence has been updated. Used to track the latest meta evidence ID.
-
-    // The amount to add to arbitration fees to cover for RedStone fees. The leftover will be reimbursed. This is required for Realtio UI.
-    // Surplus amount covers submission cost for retryable ticket on L1 + gasLimit * gasPriceBid.
-    // Submission cost is based on the length of the passed message and current gas fees. It's usually greatly lower than 0.05 but it's preferred to use this value
-    // to account for potential gas fee spikes. It shouldn't be an issue since 0.05 is a relatively low value compared to Kleros arbitration cost
-    // and the leftover will be reimbursed anyway.
-    uint256 public surplusAmount;
 
     // Multipliers are in basis points.
     uint256 public winnerMultiplier; // Multiplier for calculating the appeal fee that must be paid for the answer that was chosen by the arbitrator in the previous round.
@@ -93,10 +86,10 @@ contract RealitioForeignProxyRedStone is
 
     event RetryableTicketCreated(uint256 indexed ticketId);
 
-    modifier onlyL2Bridge() {
-        require(msg.sender == address(MESSENGER), "NOT_BRIDGE");
+    modifier onlyHomeProxy() {
+        require(msg.sender == address(messenger), "NOT_MESSENGER");
         require(
-            MESSENGER.xDomainMessageSender() == address(homeProxy),
+            messenger.xDomainMessageSender() == homeProxy,
             "Can only be called by Home proxy"
         );
         _;
@@ -114,7 +107,6 @@ contract RealitioForeignProxyRedStone is
      * @param _governor Governor of the contract.
      * @param _arbitrator Arbitrator contract address.
      * @param _arbitratorExtraData The extra data used to raise a dispute in the arbitrator.
-     * @param _surplusAmount The surplus amount to cover RedStone fees.
      * @param _metaEvidence The URI of the meta evidence file.
      * @param _multipliers Appeal multipliers:
      *  - Multiplier for calculating the appeal cost of the winning answer.
@@ -127,16 +119,14 @@ contract RealitioForeignProxyRedStone is
         address _governor,
         IArbitrator _arbitrator,
         bytes memory _arbitratorExtraData,
-        uint256 _surplusAmount,
         string memory _metaEvidence,
         uint256[3] memory _multipliers
     ) {
-        MESSENGER = ICrossDomainMessenger(_messenger);
+        messenger = ICrossDomainMessenger(_messenger);
         homeProxy = _homeProxy;
         governor = _governor;
         arbitrator = _arbitrator;
         arbitratorExtraData = _arbitratorExtraData;
-        surplusAmount = _surplusAmount;
         winnerMultiplier = _multipliers[0];
         loserMultiplier = _multipliers[1];
         loserAppealPeriodMultiplier = _multipliers[2];
@@ -152,7 +142,15 @@ contract RealitioForeignProxyRedStone is
      * @param _messenger New MESSENGER address.
      */
     function changeMessenger(address _messenger) external onlyGovernor {
-        MESSENGER = ICrossDomainMessenger(_messenger);
+        messenger = ICrossDomainMessenger(_messenger);
+    }
+
+    /**
+     * @notice Changes minimum gas limit for L1 -> L2 tx..
+     * @param _min_gas_limit New minimum gas limit.
+     */
+    function changeMinGasLimit(uint32 _min_gas_limit) external onlyGovernor {
+        min_gas_limit = _min_gas_limit;
     }
 
     /**
@@ -190,14 +188,6 @@ contract RealitioForeignProxyRedStone is
     }
 
     /**
-     * @notice Changes the surplus amount to cover the RedStone fees.
-     * @param _surplus New surplus value.
-     */
-    function changeSurplus(uint256 _surplus) external onlyGovernor {
-        surplusAmount = _surplus;
-    }
-
-    /**
      * @notice Changes winner multiplier value.
      * @param _winnerMultiplier New winner multiplier.
      */
@@ -225,14 +215,6 @@ contract RealitioForeignProxyRedStone is
         uint256 _loserAppealPeriodMultiplier
     ) external onlyGovernor {
         loserAppealPeriodMultiplier = _loserAppealPeriodMultiplier;
-    }
-
-    /**
-     * @notice Changes homeProxy address by governor only.
-     * @param _homeProxy New homeProxy address.
-     */
-    function changeHomeProxy(address _homeProxy) external onlyGovernor {
-        homeProxy = _homeProxy;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -277,14 +259,13 @@ contract RealitioForeignProxyRedStone is
         uint256 arbitrationCost = arbitrator.arbitrationCost(
             arbitratorExtraData
         );
-        uint gasFee = MESSENGER.baseGas(data, MIN_GAS_LIMIT);
 
-        require(msg.value >= arbitrationCost + gasFee, "Deposit value too low");
+        require(msg.value >= arbitrationCost, "Deposit value too low");
 
         arbitration.status = Status.Requested;
-        arbitration.deposit = uint248(msg.value - gasFee);
+        arbitration.deposit = uint248(msg.value);
 
-        MESSENGER.sendMessage(homeProxy, data, MIN_GAS_LIMIT);
+        messenger.sendMessage(homeProxy, data, min_gas_limit);
         emit ArbitrationRequested(_questionID, msg.sender, _maxPrevious);
     }
 
@@ -296,7 +277,7 @@ contract RealitioForeignProxyRedStone is
     function receiveArbitrationAcknowledgement(
         bytes32 _questionID,
         address _requester
-    ) public override onlyL2Bridge {
+    ) public override onlyHomeProxy {
         uint256 arbitrationID = uint256(_questionID);
         ArbitrationRequest storage arbitration = arbitrationRequests[
             arbitrationID
@@ -363,7 +344,7 @@ contract RealitioForeignProxyRedStone is
     function receiveArbitrationCancelation(
         bytes32 _questionID,
         address _requester
-    ) public override onlyL2Bridge {
+    ) public override onlyHomeProxy {
         uint256 arbitrationID = uint256(_questionID);
         ArbitrationRequest storage arbitration = arbitrationRequests[
             arbitrationID
@@ -388,7 +369,7 @@ contract RealitioForeignProxyRedStone is
     function handleFailedDisputeCreation(
         bytes32 _questionID,
         address _requester
-    ) external payable override {
+    ) external override {
         uint256 arbitrationID = uint256(_questionID);
         ArbitrationRequest storage arbitration = arbitrationRequests[
             arbitrationID
@@ -407,16 +388,13 @@ contract RealitioForeignProxyRedStone is
             _requester
         );
 
-        uint gasFee = MESSENGER.baseGas(data, MIN_GAS_LIMIT);
-        require(msg.value >= gasFee, "Should cover gasFee");
         uint256 deposit = arbitration.deposit;
 
         delete arbitrationRequests[arbitrationID][_requester];
-        uint256 surplusValue = msg.value - gasFee;
-        payable(msg.sender).send(surplusValue);
+
         payable(_requester).send(deposit);
 
-        MESSENGER.sendMessage(homeProxy, data, MIN_GAS_LIMIT);
+        messenger.sendMessage(homeProxy, data, min_gas_limit);
         emit ArbitrationCanceled(_questionID, _requester);
     }
 
@@ -671,10 +649,7 @@ contract RealitioForeignProxyRedStone is
      * @param _questionID The ID of the question.
      * @param _requester The address of the arbitration requester.
      */
-    function relayRule(
-        bytes32 _questionID,
-        address _requester
-    ) external payable {
+    function relayRule(bytes32 _questionID, address _requester) external {
         uint256 arbitrationID = uint256(_questionID);
         ArbitrationRequest storage arbitration = arbitrationRequests[
             arbitrationID
@@ -694,16 +669,11 @@ contract RealitioForeignProxyRedStone is
             _questionID,
             bytes32(realitioRuling)
         );
-        uint gasFee = MESSENGER.baseGas(data, MIN_GAS_LIMIT);
-        require(msg.value >= gasFee, "Should cover gas fee");
 
         arbitration.status = Status.Relayed;
 
-        MESSENGER.sendMessage(homeProxy, data, MIN_GAS_LIMIT);
+        messenger.sendMessage(homeProxy, data, min_gas_limit);
         emit RulingRelayed(_questionID, bytes32(realitioRuling));
-
-        if (msg.value - gasFee > 0)
-            payable(msg.sender).send(msg.value - gasFee); // Sending extra value back to contributor. It is the user's responsibility to accept ETH.
     }
 
     // ********************************* //
@@ -753,7 +723,7 @@ contract RealitioForeignProxyRedStone is
     function getDisputeFee(
         bytes32 /* _questionID */
     ) external view override returns (uint256) {
-        return arbitrator.arbitrationCost(arbitratorExtraData) + surplusAmount;
+        return arbitrator.arbitrationCost(arbitratorExtraData);
     }
 
     /**

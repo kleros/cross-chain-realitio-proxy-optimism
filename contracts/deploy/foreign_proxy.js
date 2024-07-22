@@ -35,7 +35,6 @@ const paramsByChainId = {
 };
 
 // Note that values apply to both testnet and mainnet since fees are obvserved to be about the same on both chains as of mid 2024.
-const surplus = ethers.parseUnits("0.05", "ether"); // This amount is at least x100 times higher than required amount to account for potential gas fee increase on L1. The surplus will be automatically reimbursed.
 const winnerMultiplier = 3000;
 const loserMultiplier = 7000;
 const loserAppealPeriodMultiplier = 5000;
@@ -84,7 +83,6 @@ async function deployForeignProxy({ deployments, getChainId, ethers, config }) {
             governor,
             arbitrator,
             arbitratorExtraData,
-            surplus,
             metaEvidence, [winnerMultiplier, loserMultiplier, loserAppealPeriodMultiplier],
         ],
     });
