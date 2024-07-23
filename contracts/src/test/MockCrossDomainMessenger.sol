@@ -6,12 +6,17 @@ import {ICrossDomainMessenger} from "../interfaces/ICrossDomainMessenger.sol";
 
 // @dev https://github.com/ethereum-optimism/optimism/blob/v1.7.7/packages/contracts-bedrock/src/universal/CrossDomainMessenger.sol
 contract MockCrossDomainMessenger is ICrossDomainMessenger {
-    address public realitioContract;
-
     address public homeProxy;
+    address public foreignProxy;
 
-    function setHomeProxy(address _homeProxy) external {
+    /**
+     * @notice Creating demo CrossDomainMessenger.
+     * @param _homeProxy address of L2 contract
+     * @param _foreignProxy address of L1 contract
+     */
+    constructor(address _homeProxy, address _foreignProxy) public {
         homeProxy = _homeProxy;
+        foreignProxy = _foreignProxy;
     }
 
     function sendMessage(
@@ -28,6 +33,15 @@ contract MockCrossDomainMessenger is ICrossDomainMessenger {
     ///         currently being executed. Allows the recipient of a call to see who triggered it.
     /// @return Address of the sender of the currently executing message on the other chain.
     function xDomainMessageSender() external view returns (address) {
+        if (msg.sender == homeProxy) return foreignProxy;
         return homeProxy;
+    }
+
+    function setHomeProxy(address _homeProxy) external {
+        homeProxy = _homeProxy;
+    }
+
+    function setForeignProxy(address _foreignProxy) external {
+        foreignProxy = _foreignProxy;
     }
 }

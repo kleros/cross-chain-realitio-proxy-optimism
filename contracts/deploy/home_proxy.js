@@ -1,5 +1,5 @@
 const { toBeHex, toBigInt, ethers } = require("ethers");
-// Networks -  Garnet (RedStone testnet), RedStone, localhost
+// Networks -  Garnet (RedStone testnet), RedStone, localhost, optimismSepolia
 const HOME_CHAIN_IDS = [17069, 690, 31337, 11155420];
 // Redstone Messenger - https://redstone.xyz/docs/contract-addresses
 // Optimism Sepolia Messenger - https://sepolia-optimism.etherscan.io/address/0x4200000000000000000000000000000000000007#code

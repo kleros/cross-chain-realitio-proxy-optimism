@@ -62,7 +62,7 @@ contract RealitioForeignProxyRedStone is
 
     // contract for L1 -> L2 communication
     ICrossDomainMessenger public messenger;
-    uint32 public min_gas_limit = 1500000; // Gas limit of the transaction call. Note some L2 operations consume up to 700000 gas.
+    uint32 public minGasLimit = 1500000; // Gas limit of the transaction call. Note some L2 operations consume up to 700000 gas.
 
     address public immutable homeProxy; // Proxy on L2.
 
@@ -147,10 +147,10 @@ contract RealitioForeignProxyRedStone is
 
     /**
      * @notice Changes minimum gas limit for L1 -> L2 tx..
-     * @param _min_gas_limit New minimum gas limit.
+     * @param _minGasLimit New minimum gas limit.
      */
-    function changeMinGasLimit(uint32 _min_gas_limit) external onlyGovernor {
-        min_gas_limit = _min_gas_limit;
+    function changeMinGasLimit(uint32 _minGasLimit) external onlyGovernor {
+        minGasLimit = _minGasLimit;
     }
 
     /**
@@ -265,7 +265,7 @@ contract RealitioForeignProxyRedStone is
         arbitration.status = Status.Requested;
         arbitration.deposit = uint248(msg.value);
 
-        messenger.sendMessage(homeProxy, data, min_gas_limit);
+        messenger.sendMessage(homeProxy, data, minGasLimit);
         emit ArbitrationRequested(_questionID, msg.sender, _maxPrevious);
     }
 
@@ -394,7 +394,7 @@ contract RealitioForeignProxyRedStone is
 
         payable(_requester).send(deposit);
 
-        messenger.sendMessage(homeProxy, data, min_gas_limit);
+        messenger.sendMessage(homeProxy, data, minGasLimit);
         emit ArbitrationCanceled(_questionID, _requester);
     }
 
@@ -672,7 +672,7 @@ contract RealitioForeignProxyRedStone is
 
         arbitration.status = Status.Relayed;
 
-        messenger.sendMessage(homeProxy, data, min_gas_limit);
+        messenger.sendMessage(homeProxy, data, minGasLimit);
         emit RulingRelayed(_questionID, bytes32(realitioRuling));
     }
 
