@@ -84,8 +84,7 @@ contract RealitioForeignProxyRedStone is
 
     mapping(uint256 => address) public arbitrationIDToRequester; // Maps arbitration ID to the requester who was able to complete the arbitration request.
 
-    event RetryableTicketCreated(uint256 indexed ticketId);
-
+    
     modifier onlyHomeProxy() {
         require(msg.sender == address(messenger), "NOT_MESSENGER");
         require(
@@ -146,7 +145,7 @@ contract RealitioForeignProxyRedStone is
     }
 
     /**
-     * @notice Changes minimum gas limit for L1 -> L2 tx..
+     * @notice Changes minimum gas limit for L1 -> L2 tx.
      * @param _minGasLimit New minimum gas limit.
      */
     function changeMinGasLimit(uint32 _minGasLimit) external onlyGovernor {

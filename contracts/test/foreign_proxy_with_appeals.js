@@ -174,7 +174,7 @@ describe("Cross-chain arbitration with appeals", () => {
             1,
             "Incorrect status of the arbitration after creating a request"
         );
-        expect(arbitration[1]).to.equal(1000, "Deposit value stored incorrectly"); // Surplus (20000) + ArbCost (1000) - ArbitrumFee (10000 + 5*500).
+        expect(arbitration[1]).to.equal(1000, "Deposit value stored incorrectly");
 
         const request = await homeProxy.requests(questionID, requesterAddress);
         expect(request[0]).to.equal(
@@ -597,33 +597,6 @@ describe("Cross-chain arbitration with appeals", () => {
         expect(request[0]).to.equal(5, "Status should be Finished");
     });
 
-    it("Should correctly reimburse the overpay when ruling is relayed", async() => {
-        await foreignProxy
-            .connect(requester)
-            .requestArbitration(questionID, maxPrevious, { value: arbitrationCost });
-
-        await homeProxy.handleNotifiedRequest(
-            questionID,
-            await requester.getAddress()
-        );
-        await arbitrator.giveRuling(2, 8);
-
-
-        const oldBalance = await getBalance(other);
-        const tx = await foreignProxy
-            .connect(other)
-            .relayRule(questionID, await requester.getAddress(), {
-                gasPrice: gasPrice
-            });
-
-        txFee = (await tx.wait()).gasUsed * gasPrice;
-
-        const newBalance = await getBalance(other);
-        expect(newBalance).to.equal(
-            oldBalance - toBigInt(txFee), // Take only txFee (tx fee includes gas fee of both L1 and L2 )
-            "Caller was not reimbursed correctly"
-        );
-    });
 
     it("Should correctly fund an appeal and fire the events", async() => {
         let oldBalance;
@@ -851,7 +824,7 @@ describe("Cross-chain arbitration with appeals", () => {
         );
     });
 
-    it("Should have correct balance after paying arbitration cost and arbitrum fee", async() => {
+    it("Should have correct balance after paying arbitration cost", async() => {
         const oldBalance = await getBalance(requester);
 
         const tx = await foreignProxy

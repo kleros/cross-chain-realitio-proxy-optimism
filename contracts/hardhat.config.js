@@ -2,7 +2,7 @@ require("dotenv/config");
 require("@nomicfoundation/hardhat-toolbox");
 require("hardhat-deploy");
 
-/** @type import('hardhat/config').HardhatUserConfig */
+
 module.exports = {
     solidity: {
         version: "0.8.25",
@@ -17,17 +17,6 @@ module.exports = {
         sources: "./src",
     },
     networks: {
-        // testnets
-        holesky: {
-            chainId: 17000,
-            url: `https://ethereum-holesky.publicnode.com`,
-            accounts: [process.env.PRIVATE_KEY],
-        },
-        garnet: {
-            chainId: 17069,
-            url: `https://partner-rpc.garnetchain.com/tireless-strand-dreamt-overcome`,
-            accounts: [process.env.PRIVATE_KEY],
-        },
         optimismSepolia: {
             chainId: 11155420,
             url: `https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,

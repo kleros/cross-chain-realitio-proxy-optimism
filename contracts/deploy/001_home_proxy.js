@@ -1,26 +1,18 @@
-const { toBeHex, toBigInt, ethers } = require("ethers");
-// Networks -  Garnet (RedStone testnet), RedStone, localhost, optimismSepolia
-const HOME_CHAIN_IDS = [17069, 690, 31337, 11155420];
+// Networks -  RedStone, optimismSepolia
+const HOME_CHAIN_IDS = [690, 11155420];
 // Redstone Messenger - https://redstone.xyz/docs/contract-addresses
-// Optimism Sepolia Messenger - https://sepolia-optimism.etherscan.io/address/0x4200000000000000000000000000000000000007#code
+// Optimism Sepolia Messenger - https://docs.optimism.io/chain/addresses
+
 const MESSENGER = "0x4200000000000000000000000000000000000007";
-const L1_TO_L2_ALIAS_OFFSET = "0x1111000000000000000000000000000000001111";
 const paramsByChainId = {
-    17069: {
-        realitio: "0x0000000000000000000000000000000000000000",
-        foreignChainId: 17000,
-    },
     690: {
-        realitio: "0x0000000000000000000000000000000000000000",
+        // https://github.com/RealityETH/reality-eth-monorepo/blob/main/packages/contracts/chains/deployments/690/ETH/RealityETH-3.0.json
+        realitio: "0xc716c23D75f523eF0C511456528F2A1980256a87",
         foreignChainId: 1,
     },
-    // localhost
-    31337: {
-        realitio: "0x0000000000000000000000000000000000000000",
-        foreignChainId: 1,
-    },
+    // https://github.com/RealityETH/reality-eth-monorepo/blob/main/packages/contracts/chains/deployments/11155111/ETH/RealityETH-3.0.json
     11155420: {
-        realitio: "0x0000000000000000000000000000000000000000",
+        realitio: "0xaf33DcB6E8c5c4D9dDF579f53031b514d19449CA",
         foreignChainId: 1,
     },
 };
@@ -35,9 +27,7 @@ async function deployHomeProxy({ deployments, getChainId, ethers, config }) {
 
     const foreignNetworks = {
         690: config.networks.mainnet,
-        17069: config.networks.sepolia,
-        31337: config.networks.localhost,
-        11155420: config.networks.optimismSepolia,
+        11155420: config.networks.sepolia,
     };
 
     const chainId = await getChainId();

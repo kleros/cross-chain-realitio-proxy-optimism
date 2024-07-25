@@ -1,36 +1,20 @@
-const { ethers } = require("ethers");
-// Networks - Holesky, Mainnet, localhost, sepolia
-const FOREIGN_CHAIN_IDS = [17000, 1, 31337, 11155111];
+// Networks -  Mainnet, Sepolia
+const FOREIGN_CHAIN_IDS = [1, 11155111];
 const paramsByChainId = {
-    17000: {
-        arbitrator: "0x90992fb4E15ce0C59aEFfb376460Fda4Ee19C879", // Kleros Liquid on Sepolia
-        arbitratorExtraData: "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-        // https://garnetchain.com/docs/contract-addresses
-        messenger: "0x7FcC26484a6CdF7100c155E7380ab203a244056E",
-        metaEvidence: "/ipfs/QmZdBkzD76TTusernqYosnZKGveHu39muv6ygvqjdEWrrW/metaevidence.json",
-    },
     1: {
         arbitrator: "0x988b3a538b618c7a603e1c11ab82cd16dbe28069", // KlerosLiquid address
         arbitratorExtraData: "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001f", // General Court - 31 jurors
         // https://redstone.xyz/docs/contract-addresses
         messenger: "0x592C1299e0F8331D81A28C0FC7352Da24eDB444a",
-        metaEvidence: "TODO", // Need to reupload with different chain ids.
-    },
-    // localhost for testing script
-    31337: {
-        arbitrator: "0x988b3a538b618c7a603e1c11ab82cd16dbe28069", // KlerosLiquid address
-        arbitratorExtraData: "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001f", // General Court - 31 jurors
-        // https://sepolia.etherscan.io/address/0x58Cc85b8D04EA49cC6DBd3CbFFd00B4B8D6cb3ef#code
-        messenger: "0x592C1299e0F8331D81A28C0FC7352Da24eDB444a",
-        metaEvidence: "TODO", // Need to reupload with different chain ids.
+        metaEvidence: "/ipfs/bafybeibho6gzezi7ludu6zxfzetmicho7ekuh3gu3oouihmbfsabhcg7te/",
     },
 
     11155111: {
-        arbitrator: "0x988b3a538b618c7a603e1c11ab82cd16dbe28069", // KlerosLiquid address
-        arbitratorExtraData: "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001f", // General Court - 31 jurors
-        // https://redstone.xyz/docs/contract-addresses
+        arbitrator: "0x90992fb4E15ce0C59aEFfb376460Fda4Ee19C879", // KlerosLiquid address
+        arbitratorExtraData: "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        // https://docs.optimism.io/chain/addresses
         messenger: "0x58Cc85b8D04EA49cC6DBd3CbFFd00B4B8D6cb3ef",
-        metaEvidence: "TODO", // Need to reupload with different chain ids.
+        metaEvidence: "/ipfs/bafybeieabr4vshl3jq2jlwwtqai4zt3c2rlkds4prrjfcxuhkck6sdhile/metaevidence.json",
     },
 };
 
@@ -49,9 +33,7 @@ async function deployForeignProxy({ deployments, getChainId, ethers, config }) {
 
     const homeNetworks = {
         1: config.networks.redstone,
-        17000: config.networks.garnet,
-        31337: config.networks.localhost,
-        11155111: config.networks.sepolia
+        11155111: config.networks.optimismSepolia,
     };
 
     const { url } = homeNetworks[chainId];

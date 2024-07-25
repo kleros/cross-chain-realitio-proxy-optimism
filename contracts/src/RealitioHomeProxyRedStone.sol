@@ -17,7 +17,7 @@ contract RealitioHomeProxyRedStone is IHomeArbitrationProxy {
     uint32 public constant MIN_GAS_LIMIT = 1500000; // Gas limit of the transaction call.
 
     // contract for L2 -> L1 communication
-    ICrossDomainMessenger public messenger;
+    ICrossDomainMessenger public immutable messenger;
 
     /// @dev The address of the Realitio contract (v3.0 required). TRUSTED.
     RealitioInterface public immutable realitio;
@@ -49,7 +49,7 @@ contract RealitioHomeProxyRedStone is IHomeArbitrationProxy {
     /// @dev Associates a question ID with the requester who succeeded in requesting arbitration. questionIDToRequester[questionID]
     mapping(bytes32 => address) public questionIDToRequester;
 
-    modifier onlyForeignProxy() virtual {
+    modifier onlyForeignProxy() {
         require(msg.sender == address(messenger), "NOT_MESSENGER");
         require(
             messenger.xDomainMessageSender() == foreignProxy,
