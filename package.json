@@ -1,7 +1,7 @@
 {
-    "name": "@kleros/redstone-cross-chain-realitio-proxy",
+    "name": "@kleros/cross-chain-realitio-proxy-optimism",
     "version": "0.1.0",
-    "description": "Cross-chain arbitration proxy for Realitio RedStone",
+    "description": "Cross-chain arbitration proxy for Realitio Optimism and RedStone",
     "author": "Kleros",
     "license": "MIT",
     "private": true,

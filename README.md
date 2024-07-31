@@ -1,1 +1,1 @@
-# redstone-cross-chain-realitio-proxy
+# cross-chain-realitio-proxy-optimism
