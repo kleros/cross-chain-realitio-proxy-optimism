@@ -1,7 +1,7 @@
 require("dotenv/config");
 require("@nomicfoundation/hardhat-toolbox");
 require("hardhat-deploy");
-
+require("@nomicfoundation/hardhat-verify");
 
 module.exports = {
     solidity: {
@@ -50,5 +50,21 @@ module.exports = {
                 foreign: "localhost",
             },
         },
+    },
+
+    etherscan: {
+        apiKey: {
+            sepolia: process.env.ETHERSCAN_API_KEY,
+            optimismSepolia: process.env.OPTIMISM_API_KEY,
+
+        },
+        customChains: [{
+            network: "optimismSepolia",
+            chainId: 11155420,
+            urls: {
+                apiURL: "https://api-sepolia-optimistic.etherscan.io/api",
+                browserURL: "https://sepolia-optimism.etherscan.io/",
+            },
+        }, ],
     },
 };

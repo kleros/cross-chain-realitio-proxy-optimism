@@ -1,3 +1,4 @@
+const { run } = require("hardhat");
 // Networks -  RedStone, optimismSepolia
 const HOME_CHAIN_IDS = [690, 11155420];
 // Redstone Messenger - https://redstone.xyz/docs/contract-addresses
@@ -10,10 +11,10 @@ const paramsByChainId = {
         realitio: "0xc716c23D75f523eF0C511456528F2A1980256a87",
         foreignChainId: 1,
     },
-    // https://github.com/RealityETH/reality-eth-monorepo/blob/main/packages/contracts/chains/deployments/11155111/ETH/RealityETH-3.0.json
+    // https://github.com/RealityETH/reality-eth-monorepo/blob/main/packages/contracts/chains/deployments/11155420/ETH/RealityETH-3.0.json
     11155420: {
-        realitio: "0xaf33DcB6E8c5c4D9dDF579f53031b514d19449CA",
-        foreignChainId: 1,
+        realitio: "0xeAD0ca922390a5E383A9D5Ba4366F7cfdc6f0dbA",
+        foreignChainId: 11155111,
     },
 };
 
@@ -21,7 +22,9 @@ const metadata =
     '{"tos":"ipfs://QmNV5NWwCudYKfiHuhdWxccrPyxs4DnbLGQace2oMKHkZv/Question_Resolution_Policy.pdf", "foreignProxy":true}'; // Same for all chains.
 
 async function deployHomeProxy({ deployments, getChainId, ethers, config }) {
-    console.log(`Running deployment script for home proxy contract on RedStone`);
+    console.log(
+        `Running deployment script for home proxy contract on RedStone/OP Sepolia`
+    );
 
     const { deploy } = deployments;
 
@@ -41,7 +44,7 @@ async function deployHomeProxy({ deployments, getChainId, ethers, config }) {
     console.log(`Nonce: ${nonce}`);
     const transaction = {
         from: account.address,
-        nonce: nonce + 1,
+        nonce: nonce,
     };
     const foreignProxy = ethers.getCreateAddress(transaction);
     console.log(`Foreign proxy: ${foreignProxy}`);
@@ -51,9 +54,21 @@ async function deployHomeProxy({ deployments, getChainId, ethers, config }) {
     const homeProxy = await deploy("RealitioHomeProxyRedStone", {
         from: account.address,
         args: [realitio, foreignChainId, foreignProxy, metadata, MESSENGER],
+        waitConfirmations: 2,
     });
     const contractAddress = homeProxy.address;
     console.log(`RealitioHomeProxyRedStone was deployed to ${contractAddress}`);
+
+    await run("verify:verify", {
+        address: homeProxy.address,
+        constructorArguments: [
+            realitio,
+            foreignChainId,
+            foreignProxy,
+            metadata,
+            MESSENGER,
+        ],
+    });
 }
 
 deployHomeProxy.tags = ["HomeChain"];

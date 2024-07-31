@@ -1,4 +1,5 @@
-// Networks -  Mainnet, Sepolia
+const { run } = require("hardhat")
+    // Networks -  Mainnet, Sepolia
 const FOREIGN_CHAIN_IDS = [1, 11155111];
 const paramsByChainId = {
     1: {
@@ -14,7 +15,7 @@ const paramsByChainId = {
         arbitratorExtraData: "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
         // https://docs.optimism.io/chain/addresses
         messenger: "0x58Cc85b8D04EA49cC6DBd3CbFFd00B4B8D6cb3ef",
-        metaEvidence: "/ipfs/bafybeieabr4vshl3jq2jlwwtqai4zt3c2rlkds4prrjfcxuhkck6sdhile/metaevidence.json",
+        metaEvidence: "/ipfs/bafybeieabr4vshl3jq2jlwwtqai4zt3c2rlkds4prrjfcxuhkck6sdhile/",
     },
 };
 
@@ -67,11 +68,24 @@ async function deployForeignProxy({ deployments, getChainId, ethers, config }) {
             arbitratorExtraData,
             metaEvidence, [winnerMultiplier, loserMultiplier, loserAppealPeriodMultiplier],
         ],
+        waitConfirmations: 2
     });
 
     console.log(
         `Foreign proxy contract was successfully deployed at ${foreignProxy.address}`
     );
+
+    await run("verify:verify", {
+        address: foreignProxy.address,
+        constructorArguments: [
+            messenger,
+            homeProxy,
+            governor,
+            arbitrator,
+            arbitratorExtraData,
+            metaEvidence, [winnerMultiplier, loserMultiplier, loserAppealPeriodMultiplier],
+        ],
+    });
 }
 
 deployForeignProxy.tags = ["ForeignChain"];
