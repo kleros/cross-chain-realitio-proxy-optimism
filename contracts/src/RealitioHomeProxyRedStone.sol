@@ -51,10 +51,7 @@ contract RealitioHomeProxyRedStone is IHomeArbitrationProxy {
 
     modifier onlyForeignProxy() {
         require(msg.sender == address(messenger), "NOT_MESSENGER");
-        require(
-            messenger.xDomainMessageSender() == foreignProxy,
-            "Can only be called by Foreign Proxy"
-        );
+        require(messenger.xDomainMessageSender() == foreignProxy, "Can only be called by Foreign Proxy");
         _;
     }
 
@@ -94,13 +91,7 @@ contract RealitioHomeProxyRedStone is IHomeArbitrationProxy {
         Request storage request = requests[_questionID][_requester];
         require(request.status == Status.None, "Request already exists");
 
-        try
-            realitio.notifyOfArbitrationRequest(
-                _questionID,
-                _requester,
-                _maxPrevious
-            )
-        {
+        try realitio.notifyOfArbitrationRequest(_questionID, _requester, _maxPrevious) {
             request.status = Status.Notified;
             questionIDToRequester[_questionID] = _requester;
 
@@ -129,23 +120,14 @@ contract RealitioHomeProxyRedStone is IHomeArbitrationProxy {
      * @param _questionID The ID of the question.
      * @param _requester The address of the user that requested arbitration.
      */
-    function handleNotifiedRequest(
-        bytes32 _questionID,
-        address _requester
-    ) external override {
+    function handleNotifiedRequest(bytes32 _questionID, address _requester) external override {
         Request storage request = requests[_questionID][_requester];
         require(request.status == Status.Notified, "Invalid request status");
 
         request.status = Status.AwaitingRuling;
 
-        bytes4 selector = IForeignArbitrationProxy
-            .receiveArbitrationAcknowledgement
-            .selector;
-        bytes memory data = abi.encodeWithSelector(
-            selector,
-            _questionID,
-            _requester
-        );
+        bytes4 selector = IForeignArbitrationProxy.receiveArbitrationAcknowledgement.selector;
+        bytes memory data = abi.encodeWithSelector(selector, _questionID, _requester);
         messenger.sendMessage(foreignProxy, data, MIN_GAS_LIMIT);
         emit RequestAcknowledged(_questionID, _requester);
     }
@@ -160,24 +142,15 @@ contract RealitioHomeProxyRedStone is IHomeArbitrationProxy {
      * @param _questionID The ID of the question.
      * @param _requester The address of the user that requested arbitration.
      */
-    function handleRejectedRequest(
-        bytes32 _questionID,
-        address _requester
-    ) external override {
+    function handleRejectedRequest(bytes32 _questionID, address _requester) external override {
         Request storage request = requests[_questionID][_requester];
         require(request.status == Status.Rejected, "Invalid request status");
 
         // At this point, only the request.status is set, simply reseting the status to Status.None is enough.
         request.status = Status.None;
 
-        bytes4 selector = IForeignArbitrationProxy
-            .receiveArbitrationCancelation
-            .selector;
-        bytes memory data = abi.encodeWithSelector(
-            selector,
-            _questionID,
-            _requester
-        );
+        bytes4 selector = IForeignArbitrationProxy.receiveArbitrationCancelation.selector;
+        bytes memory data = abi.encodeWithSelector(selector, _questionID, _requester);
         messenger.sendMessage(foreignProxy, data, MIN_GAS_LIMIT);
         emit RequestCanceled(_questionID, _requester);
     }
@@ -188,15 +161,9 @@ contract RealitioHomeProxyRedStone is IHomeArbitrationProxy {
      * @param _questionID The ID of the question.
      * @param _requester The address of the user that requested arbitration.
      */
-    function receiveArbitrationFailure(
-        bytes32 _questionID,
-        address _requester
-    ) external override onlyForeignProxy {
+    function receiveArbitrationFailure(bytes32 _questionID, address _requester) external override onlyForeignProxy {
         Request storage request = requests[_questionID][_requester];
-        require(
-            request.status == Status.AwaitingRuling,
-            "Invalid request status"
-        );
+        require(request.status == Status.AwaitingRuling, "Invalid request status");
 
         // At this point, only the request.status is set, simply reseting the status to Status.None is enough.
         request.status = Status.None;
@@ -211,16 +178,10 @@ contract RealitioHomeProxyRedStone is IHomeArbitrationProxy {
      * @param _questionID The ID of the question.
      * @param _answer The answer from the arbitrator.
      */
-    function receiveArbitrationAnswer(
-        bytes32 _questionID,
-        bytes32 _answer
-    ) external override onlyForeignProxy {
+    function receiveArbitrationAnswer(bytes32 _questionID, bytes32 _answer) external override onlyForeignProxy {
         address requester = questionIDToRequester[_questionID];
         Request storage request = requests[_questionID][requester];
-        require(
-            request.status == Status.AwaitingRuling,
-            "Invalid request status"
-        );
+        require(request.status == Status.AwaitingRuling, "Invalid request status");
 
         request.status = Status.Ruled;
         request.arbitratorAnswer = _answer;
