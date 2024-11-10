@@ -7,7 +7,6 @@
     "scripts": {
         "build": "hardhat compile",
         "test": "hardhat test",
-        "start": "hardhat node --tags nop",
         "deploy-local": "hardhat deploy --network localhost --tags HomeChain && hardhat deploy --network localhost --tags ForeignChain",
         "deploy-staging": "hardhat deploy --network optimismSepolia && hardhat deploy --network sepolia",
         "deploy-production": "hardhat deploy --network redstone && hardhat deploy --network mainnet"

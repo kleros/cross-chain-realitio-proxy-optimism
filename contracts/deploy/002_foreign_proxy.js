@@ -15,7 +15,7 @@ const paramsByChainId = {
         arbitratorExtraData: "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
         // https://docs.optimism.io/chain/addresses
         messenger: "0x58Cc85b8D04EA49cC6DBd3CbFFd00B4B8D6cb3ef",
-        metaEvidence: "/ipfs/bafybeieabr4vshl3jq2jlwwtqai4zt3c2rlkds4prrjfcxuhkck6sdhile/",
+        metaEvidence: "/ipfs/QmYj9PRtDV4HpNKXJbJ8AaYv5FBknNuSo4kjH2raHX47eM/",
     },
 };
 
@@ -51,12 +51,8 @@ async function deployForeignProxy({ deployments, getChainId, ethers, config }) {
     const homeProxy = ethers.getCreateAddress(transaction);
     console.log(`Home proxy: ${homeProxy}`);
 
-    let governor;
-    if (chainId === 1) {
-        governor = "TODO"; // Determine later
-    } else {
-        governor = (await ethers.getSigners())[0].address;
-    }
+    // Initially have the deployer as governor, and change it later
+    const governor = (await ethers.getSigners())[0].address;
 
     const foreignProxy = await deploy("RealitioForeignProxyRedStone", {
         from: account.address,

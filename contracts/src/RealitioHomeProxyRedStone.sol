@@ -13,6 +13,10 @@ import "./interfaces/RealitioInterface.sol";
 import {IForeignArbitrationProxy, IHomeArbitrationProxy} from "./interfaces/ArbitrationProxyInterfaces.sol";
 import {ICrossDomainMessenger} from "./interfaces/ICrossDomainMessenger.sol";
 
+/**
+ * @title Arbitration proxy for Realitio on home chain (eg. Redstone).
+ * @dev https://docs.optimism.io/builders/app-developers/bridging/messaging
+ */
 contract RealitioHomeProxyRedStone is IHomeArbitrationProxy {
     uint32 public constant MIN_GAS_LIMIT = 1500000; // Gas limit of the transaction call.
 
