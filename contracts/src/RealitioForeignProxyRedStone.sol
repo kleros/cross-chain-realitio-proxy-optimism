@@ -14,6 +14,10 @@ import {IDisputeResolver, IArbitrator} from "@kleros/dispute-resolver-interface-
 import {IForeignArbitrationProxy, IHomeArbitrationProxy} from "./interfaces/ArbitrationProxyInterfaces.sol";
 import {ICrossDomainMessenger} from "./interfaces/ICrossDomainMessenger.sol";
 
+/**
+ * @title Arbitration proxy for Realitio on foreign chain (eg. mainnet).
+ * @dev https://docs.optimism.io/builders/app-developers/bridging/messaging
+ */
 contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResolver {
     /* Constants */
     uint256 public constant NUMBER_OF_CHOICES_FOR_ARBITRATOR = type(uint256).max; // The number of choices for the arbitrator.
@@ -58,7 +62,7 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
 
     // contract for L1 -> L2 communication
     ICrossDomainMessenger public messenger;
-    uint32 public minGasLimit = 1500000; // Gas limit of the transaction call. Note some L2 operations consume up to 700000 gas.
+    uint32 public minGasLimit = 200000; // Gas limit of the transaction call on L2. Note that setting value too high results in high gas estimation fee (tested on Sepolia).
 
     address public immutable homeProxy; // Proxy on L2.
 
@@ -73,10 +77,11 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
     uint256 public loserAppealPeriodMultiplier; // Multiplier for calculating the duration of the appeal period for the loser, in basis points.
 
     mapping(uint256 => mapping(address => ArbitrationRequest)) public arbitrationRequests; // Maps arbitration ID to its data. arbitrationRequests[uint(questionID)][requester].
-    mapping(address => mapping(uint256 => DisputeDetails)) public arbitratorDisputeIDToDisputeDetails; // Maps external dispute ids from a particular arbitrator to local arbitration ID and requester who was able to complete the arbitration request.mapping(uint256 => bool) public arbitrationIDToDisputeExists; // Whether a dispute has already been created for the given arbitration ID or not.
+    mapping(address => mapping(uint256 => DisputeDetails)) public arbitratorDisputeIDToDisputeDetails; // Maps external dispute ids from a particular arbitrator to local arbitration ID and requester who was able to complete the arbitration request.
     mapping(uint256 => bool) public arbitrationIDToDisputeExists; // Whether a dispute has already been created for the given arbitration ID or not.
 
     mapping(uint256 => address) public arbitrationIDToRequester; // Maps arbitration ID to the requester who was able to complete the arbitration request.
+    mapping(uint256 => uint256) public arbitrationCreatedBlock; // Block of dispute creation.
 
     modifier onlyHomeProxy() {
         require(msg.sender == address(messenger), "NOT_MESSENGER");
@@ -253,6 +258,7 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
 
                 arbitrationIDToDisputeExists[arbitrationID] = true;
                 arbitrationIDToRequester[arbitrationID] = _requester;
+                arbitrationCreatedBlock[disputeID] = block.number;
 
                 // At this point, arbitration.deposit is guaranteed to be greater than or equal to the arbitration cost.
                 uint256 remainder = arbitration.deposit - arbitrationCost;
@@ -460,7 +466,7 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
         address requester = arbitrationIDToRequester[_arbitrationID];
         ArbitrationRequest storage arbitration = arbitrationRequests[_arbitrationID][requester];
         if (address(arbitration.arbitrator) == address(0)) {
-            //None or Requested status.
+            // None or Requested status.
             // Note that arbitrator set during requestArbitration might differ from default arbitrator, if default arbitrator was changed during Requested status.
             emit Evidence(arbitrator, _arbitrationID, msg.sender, _evidenceURI);
         } else {
