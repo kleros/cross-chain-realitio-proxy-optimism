@@ -9,8 +9,8 @@
         "test": "hardhat test",
         "start": "hardhat node --tags nop",
         "deploy-local": "hardhat deploy --network localhost --tags HomeChain && hardhat deploy --network localhost --tags ForeignChain",
-        "deploy-staging": "hardhat deploy --network optimismSepolia && hardhat deploy --network sepolia",
-        "deploy-production": "hardhat deploy --network redstone && hardhat deploy --network mainnet"
+        "deploy-staging": "hardhat deploy --network optimismSepolia --tags HomeChain  && hardhat deploy --network sepolia --tags ForeignChain",
+        "deploy-production": "hardhat deploy --network redstone --tags HomeChain  && hardhat deploy --network mainnet --tags ForeignChain"
     },
     "devDependencies": {
         "@nomicfoundation/hardhat-chai-matchers": "^2.0.7",
