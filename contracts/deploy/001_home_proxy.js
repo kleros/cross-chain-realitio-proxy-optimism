@@ -19,7 +19,7 @@ const paramsByChainId = {
   },
   // https://github.com/RealityETH/reality-eth-monorepo/blob/main/packages/contracts/chains/deployments/1301/ETH/RealityETH-3.0.json
   [homeChains.unichainSepolia.chainId]: {
-    realitio: "FIXME!",
+    realitio: "0x0000000000000000000000000000000000000000", // FIXME!
     foreignChain: foreignChains.sepolia,
   },
 };
@@ -27,7 +27,7 @@ const paramsByChainId = {
 const metadata =
   '{"tos":"ipfs://QmNV5NWwCudYKfiHuhdWxccrPyxs4DnbLGQace2oMKHkZv/Question_Resolution_Policy.pdf", "foreignProxy":true}'; // Same for all chains.
 
-async function deployHomeProxy({ deployments, getChainId, ethers, config }) {
+async function deployHomeProxy({ deployments, getChainId, ethers }) {
   console.log(`Running deployment script for home proxy contract on RedStone/OP Sepolia`);
 
   const { deploy } = deployments;
@@ -44,12 +44,14 @@ async function deployHomeProxy({ deployments, getChainId, ethers, config }) {
   const foreignProxy = ethers.getCreateAddress(transaction);
   console.log(`Foreign proxy: ${foreignProxy}`);
 
-  console.log(`Args: realitio=${realitio}, foreignChainId=${foreignChain.chainId}, foreignProxy=${foreignProxy}, metadata=${metadata}, MESSENGER=${MESSENGER}`);
-  
+  console.log(
+    `Args: realitio=${realitio}, foreignChainId=${foreignChain.chainId}, foreignProxy=${foreignProxy}, metadata=${metadata}, MESSENGER=${MESSENGER}`
+  );
+
   const homeProxy = await deploy("RealitioHomeProxyRedStone", {
     from: account.address,
     args: [realitio, foreignChain.chainId, foreignProxy, metadata, MESSENGER],
-    waitConfirmations: 2,
+    waitConfirmations: 1,
   });
   const contractAddress = homeProxy.address;
   console.log(`RealitioHomeProxyRedStone was deployed to ${contractAddress}`);

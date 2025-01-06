@@ -21,20 +21,32 @@ module.exports = {
     unichainSepolia: {
       chainId: 1301,
       url: `https://sepolia.unichain.org/`,
+      // url: `http://127.0.0.1:8546`,
       accounts: [process.env.PRIVATE_KEY],
       tags: ["home"],
+      companionNetworks: {
+        foreign: "sepolia",
+      },
     },
     optimismSepolia: {
       chainId: 11155420,
       url: `https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
       accounts: [process.env.PRIVATE_KEY],
       tags: ["home"],
+      companionNetworks: {
+        foreign: "sepolia",
+      },
     },
     sepolia: {
       chainId: 11155111,
       url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
+      // url: `http://127.0.0.1:8545`,
       accounts: [process.env.PRIVATE_KEY],
       tags: ["foreign"],
+      companionNetworks: {
+        homeUnichain: "unichainSepolia",
+        homeOptimism: "optimismSepolia",
+      },
     },
     // mainnets
     redstone: {
@@ -42,18 +54,28 @@ module.exports = {
       url: `https://rpc.redstonechain.com`,
       accounts: [process.env.PRIVATE_KEY],
       tags: ["home"],
+      companionNetworks: {
+        foreign: "mainnet",
+      },
     },
     unichain: {
       chainId: 130,
       url: `https://FIXME.unichain.org/`,
       accounts: [process.env.PRIVATE_KEY],
       tags: ["home"],
+      companionNetworks: {
+        foreign: "mainnet",
+      },
     },
     mainnet: {
       chainId: 1,
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
       accounts: [process.env.PRIVATE_KEY],
       tags: ["foreign"],
+      companionNetworks: {
+        homeUnichain: "unichain",
+        homeOptimism: "optimism",
+      },
     },
     // local
     localhost: {
@@ -61,10 +83,6 @@ module.exports = {
       chainId: 31337,
       saveDeployments: true,
       tags: ["test", "local"],
-      companionNetworks: {
-        home: "localhost",
-        foreign: "localhost",
-      },
     },
   },
   etherscan: {
