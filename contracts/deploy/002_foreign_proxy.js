@@ -1,33 +1,38 @@
 const { run } = require("hardhat");
-const { homeChains, foreignChains, FOREIGN_CHAIN_IDS } = require("./consts/index");
+const { foreignChains, FOREIGN_CHAIN_IDS } = require("./consts/index");
+const { mainnet, sepolia } = foreignChains;
+
+const encodeExtraData = (courtId, minJurors) => ethers.AbiCoder.defaultAbiCoder().encode(
+  ["uint96", "uint96"],
+  [courtId, minJurors]
+);
+
+const klerosLiquid = {
+  [mainnet.chainId]: "0x988b3a538b618c7a603e1c11ab82cd16dbe28069",
+  [sepolia.chainId]: "0x90992fb4E15ce0C59aEFfb376460Fda4Ee19C879",
+}
 
 const paramsByChainId = {
-  [foreignChains.mainnet.chainId]: {
-    arbitrator: "0x988b3a538b618c7a603e1c11ab82cd16dbe28069", // KlerosLiquid address
-    arbitratorExtraData:
-      "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001f", // General Court - 31 jurors
+  [mainnet.chainId]: {
+    arbitrator: klerosLiquid[mainnet.chainId],
+    arbitratorExtraData: encodeExtraData(0, 31), // General Court - 31 jurors
     // https://redstone.xyz/docs/contract-addresses
     messenger: "0x592C1299e0F8331D81A28C0FC7352Da24eDB444a",
     metaEvidence: "/ipfs/bafybeibho6gzezi7ludu6zxfzetmicho7ekuh3gu3oouihmbfsabhcg7te/",
-    homeChain: homeChains.redstone,
   },
-  // [foreignChains.sepolia.chainId]: {
-  //   arbitrator: "0x90992fb4E15ce0C59aEFfb376460Fda4Ee19C879", // KlerosLiquid address
-  //   arbitratorExtraData:
-  //     "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  // [sepolia.chainId]: {
+  //   arbitrator: klerosLiquid[sepolia.chainId],
+  //   arbitratorExtraData: encodeExtraData(0, 1), // General Court - 1 juror
   //   // https://docs.optimism.io/chain/addresses
   //   messenger: "0x58Cc85b8D04EA49cC6DBd3CbFFd00B4B8D6cb3ef",
   //   metaEvidence: "/ipfs/QmYj9PRtDV4HpNKXJbJ8AaYv5FBknNuSo4kjH2raHX47eM/",
-  //   homeChain: homeChains.optimismSepolia,
   // },
-  [foreignChains.sepolia.chainId]: {
-    arbitrator: "0x90992fb4E15ce0C59aEFfb376460Fda4Ee19C879", // KlerosLiquid address
-    arbitratorExtraData:
-      "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  [sepolia.chainId]: {
+    arbitrator: klerosLiquid[sepolia.chainId],
+    arbitratorExtraData: encodeExtraData(0, 1), // General Court - 1 juror
     // https://docs.unichain.org/docs/technical-information/contract-addresses
     messenger: "0x448A37330A60494E666F6DD60aD48d930AEbA381",
     metaEvidence: "/ipfs/TODO/",
-    homeChain: homeChains.unichainSepolia,
   },
 };
 
@@ -41,20 +46,11 @@ async function deployForeignProxy({ deployments, getChainId, ethers, companionNe
 
   const { deploy } = deployments;
   const chainId = await getChainId();
-  const { arbitrator, arbitratorExtraData, messenger, metaEvidence, homeChain } = paramsByChainId[chainId];
+  const { arbitrator, arbitratorExtraData, messenger, metaEvidence } = paramsByChainId[chainId];
   const [account] = await ethers.getSigners();
   const homeProxy = await companionNetworks.homeUnichain.deployments
     .get("RealitioHomeProxyRedStone")
     .then((homeProxy) => homeProxy.address);
-  // const provider = new ethers.JsonRpcProvider(homeChain.url);
-  // const nonce = await provider.getTransactionCount(account.address);
-  // console.log(`Nonce: ${nonce}`);
-  // const transaction = {
-  //   from: account.address,
-  //   nonce: nonce - 1, // Subtract 1 to get the nonce that was before home proxy deployment
-  // };
-  // const homeProxy = ethers.getCreateAddress(transaction);
-  // console.log(`Home proxy: ${homeProxy}`);
 
   // Initially have the deployer as governor, and change it later
   const governor = (await ethers.getSigners())[0].address;

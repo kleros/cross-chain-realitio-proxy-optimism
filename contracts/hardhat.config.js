@@ -18,6 +18,17 @@ module.exports = {
   },
   networks: {
     // testnets
+    sepolia: {
+      chainId: 11155111,
+      url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
+      // url: `http://127.0.0.1:8545`,
+      accounts: [process.env.PRIVATE_KEY],
+      tags: ["foreign"],
+      companionNetworks: {
+        homeUnichain: "unichainSepolia",
+        homeOptimism: "optimismSepolia",
+      },
+    },
     unichainSepolia: {
       chainId: 1301,
       url: `https://sepolia.unichain.org/`,
@@ -37,25 +48,15 @@ module.exports = {
         foreign: "sepolia",
       },
     },
-    sepolia: {
-      chainId: 11155111,
-      url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
-      // url: `http://127.0.0.1:8545`,
+    // mainnets
+    mainnet: {
+      chainId: 1,
+      url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
       accounts: [process.env.PRIVATE_KEY],
       tags: ["foreign"],
       companionNetworks: {
-        homeUnichain: "unichainSepolia",
-        homeOptimism: "optimismSepolia",
-      },
-    },
-    // mainnets
-    redstone: {
-      chainId: 690,
-      url: `https://rpc.redstonechain.com`,
-      accounts: [process.env.PRIVATE_KEY],
-      tags: ["home"],
-      companionNetworks: {
-        foreign: "mainnet",
+        homeUnichain: "unichain",
+        homeOptimism: "optimism",
       },
     },
     unichain: {
@@ -67,14 +68,22 @@ module.exports = {
         foreign: "mainnet",
       },
     },
-    mainnet: {
-      chainId: 1,
-      url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    optimism: {
+      chainId: 10,
+      url: `https://optimism.infura.io/v3/${process.env.INFURA_API_KEY}`,
       accounts: [process.env.PRIVATE_KEY],
-      tags: ["foreign"],
+      tags: ["home"],
       companionNetworks: {
-        homeUnichain: "unichain",
-        homeOptimism: "optimism",
+        foreign: "mainnet",
+      },
+    },
+    redstone: {
+      chainId: 690,
+      url: `https://rpc.redstonechain.com`,
+      accounts: [process.env.PRIVATE_KEY],
+      tags: ["home"],
+      companionNetworks: {
+        foreign: "mainnet",
       },
     },
     // local
