@@ -6,41 +6,51 @@ const { unichain, optimism, redstone, unichainSepolia, optimismSepolia } = homeC
 // Optimism Sepolia Messenger - https://docs.optimism.io/chain/addresses
 // Unichain Sepolia Messenger - https://docs.unichain.org/docs/technical-information/contract-addresses
 // Same for all the L2 OP chains
-const MESSENGER = "0x4200000000000000000000000000000000000007";
-
-const paramsByChainId = {
-  [unichain.chainId]: {
-    // https://github.com/RealityETH/reality-eth-monorepo/blob/main/packages/contracts/chains/deployments/130/ETH/RealityETH-3.0.json
-    realitio: "0x0000000000000000000000000000000000000000", // FIXME!
-  },
-  [optimism.chainId]: {
-    // https://github.com/RealityETH/reality-eth-monorepo/blob/main/packages/contracts/chains/deployments/10/OETH/RealityETH-3.0.json
-    realitio: "0x0eF940F7f053a2eF5D6578841072488aF0c7d89A",
-  },
-  [redstone.chainId]: {
-    // https://github.com/RealityETH/reality-eth-monorepo/blob/main/packages/contracts/chains/deployments/690/ETH/RealityETH-3.0.json
-    realitio: "0xc716c23D75f523eF0C511456528F2A1980256a87",
-  },
-  [optimismSepolia.chainId]: {
-    // https://github.com/RealityETH/reality-eth-monorepo/blob/main/packages/contracts/chains/deployments/11155420/ETH/RealityETH-3.0.json
-    realitio: "0xeAD0ca922390a5E383A9D5Ba4366F7cfdc6f0dbA",
-  },
-  [unichainSepolia.chainId]: {
-    // https://github.com/RealityETH/reality-eth-monorepo/blob/main/packages/contracts/chains/deployments/1301/ETH/RealityETH-3.0.json
-    realitio: "0x288799697AE9EbceDC1b30BBAE6a38e03e41CdDb",
-  },
-};
+const messenger = "0x4200000000000000000000000000000000000007";
 
 // Same for all chains
 const metadata =
   '{"tos":"ipfs://QmNV5NWwCudYKfiHuhdWxccrPyxs4DnbLGQace2oMKHkZv/Question_Resolution_Policy.pdf", "foreignProxy":true}';
 
-async function deployHomeProxy({ deployments, getChainId, ethers, companionNetworks, config }) {
+const params = {
+  [unichainSepolia.chainId]: {
+    // https://github.com/RealityETH/reality-eth-monorepo/blob/main/packages/contracts/chains/deployments/1301/ETH/RealityETH-3.0.json
+    realitio: "0x288799697AE9EbceDC1b30BBAE6a38e03e41CdDb",
+    messenger,
+    metadata,
+  },
+  [optimismSepolia.chainId]: {
+    // https://github.com/RealityETH/reality-eth-monorepo/blob/main/packages/contracts/chains/deployments/11155420/ETH/RealityETH-3.0.json
+    realitio: "0xeAD0ca922390a5E383A9D5Ba4366F7cfdc6f0dbA",
+    messenger,
+    metadata,
+  },
+  [unichain.chainId]: {
+    // https://github.com/RealityETH/reality-eth-monorepo/blob/main/packages/contracts/chains/deployments/130/ETH/RealityETH-3.0.json
+    realitio: "0x0000000000000000000000000000000000000000", // FIXME!
+    messenger,
+    metadata,
+  },
+  [optimism.chainId]: {
+    // https://github.com/RealityETH/reality-eth-monorepo/blob/main/packages/contracts/chains/deployments/10/OETH/RealityETH-3.0.json
+    realitio: "0x0eF940F7f053a2eF5D6578841072488aF0c7d89A",
+    messenger,
+    metadata,
+  },
+  [redstone.chainId]: {
+    // https://github.com/RealityETH/reality-eth-monorepo/blob/main/packages/contracts/chains/deployments/690/ETH/RealityETH-3.0.json
+    realitio: "0xc716c23D75f523eF0C511456528F2A1980256a87",
+    messenger,
+    metadata,
+  },
+};
+
+async function deployHomeProxy({ deployments, getChainId, ethers, config }) {
   console.log(`Running deployment script for home proxy contract on RedStone/OP Sepolia`);
 
   const { deploy } = deployments;
   const chainId = await getChainId();
-  const { realitio } = paramsByChainId[chainId];
+  const { realitio, metadata, messenger } = params[chainId];
   const foreignNetwork = config.networks[network.companionNetworks.foreign];
   const provider = new ethers.JsonRpcProvider(foreignNetwork.url);
   const [account] = await ethers.getSigners();
@@ -54,12 +64,12 @@ async function deployHomeProxy({ deployments, getChainId, ethers, companionNetwo
   console.log(`Foreign proxy: ${foreignProxy}`);
 
   console.log(
-    `Args: realitio=${realitio}, foreignChainId=${foreignNetwork.chainId}, foreignProxy=${foreignProxy}, metadata=${metadata}, MESSENGER=${MESSENGER}`
+    `Args: realitio=${realitio}, foreignChainId=${foreignNetwork.chainId}, foreignProxy=${foreignProxy}, metadata=${metadata}, messenger=${messenger}`
   );
 
   const homeProxy = await deploy("RealitioHomeProxyRedStone", {
     from: account.address,
-    args: [realitio, foreignNetwork.chainId, foreignProxy, metadata, MESSENGER],
+    args: [realitio, foreignNetwork.chainId, foreignProxy, metadata, messenger],
     waitConfirmations: 1,
   });
   const contractAddress = homeProxy.address;
@@ -67,7 +77,7 @@ async function deployHomeProxy({ deployments, getChainId, ethers, companionNetwo
 
   await run("verify:verify", {
     address: homeProxy.address,
-    constructorArguments: [realitio, foreignNetwork.chainId, foreignProxy, metadata, MESSENGER],
+    constructorArguments: [realitio, foreignNetwork.chainId, foreignProxy, metadata, messenger],
   });
 }
 

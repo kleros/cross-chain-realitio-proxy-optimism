@@ -8,8 +8,21 @@
         "build": "hardhat compile",
         "test": "hardhat test",
         "deploy-local": "hardhat deploy --network localhost --tags HomeChain && hardhat deploy --network localhost --tags ForeignChain",
-        "deploy-staging": "hardhat deploy --network optimismSepolia --tags HomeChain  && hardhat deploy --network sepolia --tags ForeignChain",
-        "deploy-production": "hardhat deploy --network redstone --tags HomeChain  && hardhat deploy --network mainnet --tags ForeignChain"
+        "deploy:unichainSepolia:home": "hardhat deploy --network unichainSepolia --tags HomeChain",
+        "deploy:unichainSepolia:foreign": "DEPLOYMENT=sepoliaUnichainSepolia hardhat deploy --network sepolia --tags ForeignChain",
+        "deploy:unichainSepolia": "yarn deploy:unichainSepolia:home && yarn deploy:unichainSepolia:foreign",
+        "deploy:optimismSepolia:home": "hardhat deploy --network optimismSepolia --tags HomeChain",
+        "deploy:optimismSepolia:foreign": "DEPLOYMENT=sepoliaOptimismSepolia hardhat deploy --network sepolia --tags ForeignChain",
+        "deploy:optimismSepolia": "yarn deploy:optimismSepolia:home && yarn deploy:optimismSepolia:foreign",
+        "deploy:unichain:home": "hardhat deploy --network unichain --tags HomeChain",
+        "deploy:unichain:foreign": "DEPLOYMENT=mainnetUnichain hardhat deploy --network mainnet --tags ForeignChain",
+        "deploy:unichain": "yarn deploy:unichain:home && yarn deploy:unichain:foreign",
+        "deploy:optimism:home": "hardhat deploy --network optimism --tags HomeChain",
+        "deploy:optimism:foreign": "DEPLOYMENT=mainnetOptimism hardhat deploy --network mainnet --tags ForeignChain",
+        "deploy:optimism": "yarn deploy:optimism:home && yarn deploy:optimism:foreign",
+        "deploy:redstone:home": "hardhat deploy --network redstone --tags HomeChain",
+        "deploy:redstone:foreign": "DEPLOYMENT=mainnetRedstone hardhat deploy --network mainnet --tags ForeignChain",
+        "deploy:redstone": "yarn deploy:redstone:home && yarn deploy:redstone:foreign"
     },
     "devDependencies": {
         "@nomicfoundation/hardhat-chai-matchers": "^2.0.7",
