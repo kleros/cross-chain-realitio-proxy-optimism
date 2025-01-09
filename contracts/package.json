@@ -1,5 +1,5 @@
 {
-    "name": "@kleros/cross-chain-realitio-proxy-optimism-contracts",
+    "name": "@kleros/cross-chain-realitio-contracts",
     "version": "0.5.0",
     "main": "index.js",
     "author": "Kleros",
