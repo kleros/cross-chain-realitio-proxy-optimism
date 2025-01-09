@@ -1,6 +1,6 @@
 {
   "name": "@kleros/cross-chain-realitio-evidence-display",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "index.js",
   "author": "Kleros",
   "license": "MIT",

@@ -2,6 +2,7 @@ require("dotenv/config");
 require("@nomicfoundation/hardhat-toolbox");
 require("hardhat-deploy");
 require("@nomicfoundation/hardhat-verify");
+require("./tasks/generate-metaevidence");
 
 module.exports = {
   solidity: {
@@ -21,7 +22,7 @@ module.exports = {
     sepolia: {
       chainId: 11155111,
       url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
-      // url: `http://127.0.0.1:8545`,
+      // url: `http://127.0.0.1:8545`, // fork with `anvil --fork-url https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY} --port 8545`
       accounts: [process.env.PRIVATE_KEY],
       tags: ["foreign"],
       companionNetworks: {
@@ -32,7 +33,7 @@ module.exports = {
     unichainSepolia: {
       chainId: 1301,
       url: `https://sepolia.unichain.org/`,
-      // url: `http://127.0.0.1:8546`,
+      // url: `http://127.0.0.1:8546`, // fork with `anvil --fork-url https://sepolia.unichain.org --port 8546`
       accounts: [process.env.PRIVATE_KEY],
       tags: ["home"],
       companionNetworks: {
