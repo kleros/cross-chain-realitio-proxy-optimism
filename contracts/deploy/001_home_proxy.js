@@ -81,8 +81,9 @@ async function deployHomeProxy({ deployments, getChainId, ethers, config, networ
     args: [realitio, foreignNetwork.chainId, foreignProxy, metadata, messenger],
     waitConfirmations: 1,
   });
-  const contractAddress = homeProxy.address;
-  console.log(`RealitioHomeProxyOptimism was deployed to ${contractAddress}`);
+
+  console.log(`RealitioHomeProxyOptimism was deployed to ${homeProxy.address}, waiting 5 seconds before verifying...`);
+  await new Promise((resolve) => setTimeout(resolve, 5000));
 
   await run("verify:verify", {
     address: homeProxy.address,

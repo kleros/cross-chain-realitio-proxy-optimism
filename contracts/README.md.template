@@ -1,0 +1,10 @@
+# @kleros/cross-chain-realitio-contracts
+
+Smart contracts for the Reality.eth cross-chain proxies on Optimism L2s.
+
+## Deployments
+
+Refresh the list of deployed contracts by running `./scripts/generateDeploymentsMarkdown.sh` or `./scripts/populateReadme.sh`.
+
+$deployments
+

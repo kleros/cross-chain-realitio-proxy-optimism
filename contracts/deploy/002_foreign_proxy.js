@@ -107,7 +107,10 @@ async function deployForeignProxy({ deployments, ethers, companionNetworks, conf
     waitConfirmations: 1,
   });
 
-  console.log(`Foreign proxy contract was successfully deployed at ${foreignProxy.address}`);
+  console.log(
+    `Foreign proxy contract was successfully deployed at ${foreignProxy.address}, waiting 5 seconds before verifying...`
+  );
+  await new Promise((resolve) => setTimeout(resolve, 5000));
 
   await run("verify:verify", {
     address: foreignProxy.address,
