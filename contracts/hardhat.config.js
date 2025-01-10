@@ -43,6 +43,7 @@ module.exports = {
     optimismSepolia: {
       chainId: 11155420,
       url: `https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
+      // url: `http://127.0.0.1:8547`, // fork with `anvil --fork-url https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API_KEY} --port 8547`
       accounts: [process.env.PRIVATE_KEY],
       tags: ["home"],
       companionNetworks: {

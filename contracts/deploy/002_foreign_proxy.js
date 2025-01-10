@@ -10,48 +10,53 @@ const klerosLiquid = {
   [sepolia.chainId]: "0x90992fb4E15ce0C59aEFfb376460Fda4Ee19C879",
 };
 
+const oracleCourt = {
+  [mainnet.chainId]: 24,
+  [sepolia.chainId]: 3,
+};
+
 // Note that values apply to both testnet and mainnet since fees are observed to be about the same on both chains as of mid 2024.
 const winnerMultiplier = 3000;
 const loserMultiplier = 7000;
 const loserAppealPeriodMultiplier = 5000;
 
-// The parameters are keyed by deployment name rather than by chainId because several home proxies point to the same foreign proxy.
+// The parameters are keyed by home network name rather than by chainId because several home proxies point to the same foreign proxy.
 const params = {
-  sepoliaUnichainSepolia: {
+  unichainSepolia: {
     arbitrator: klerosLiquid[sepolia.chainId],
-    arbitratorExtraData: encodeExtraData(0, 1), // General Court - 1 juror
+    arbitratorExtraData: encodeExtraData(oracleCourt[sepolia.chainId], 1), // General Court - 1 juror
     // https://docs.unichain.org/docs/technical-information/contract-addresses
     messenger: "0x448A37330A60494E666F6DD60aD48d930AEbA381",
-    metaEvidence: "/ipfs/FIXME/",
+    metaEvidence: "/ipfs/QmfFVUKfKjZyXPwcefpJqBbFaaA4GcZrzMnt3xH211ySKy",
     multipliers: [winnerMultiplier, loserMultiplier, loserAppealPeriodMultiplier],
   },
-  sepoliaOptimismSepolia: {
+  optimismSepolia: {
     arbitrator: klerosLiquid[sepolia.chainId],
-    arbitratorExtraData: encodeExtraData(0, 1), // General Court - 1 juror
+    arbitratorExtraData: encodeExtraData(oracleCourt[sepolia.chainId], 1), // General Court - 1 juror
     // https://docs.optimism.io/chain/addresses
     messenger: "0x58Cc85b8D04EA49cC6DBd3CbFFd00B4B8D6cb3ef",
     metaEvidence: "/ipfs/QmYj9PRtDV4HpNKXJbJ8AaYv5FBknNuSo4kjH2raHX47eM/",
     multipliers: [winnerMultiplier, loserMultiplier, loserAppealPeriodMultiplier],
   },
-  mainnetUnichain: {
+  unichain: {
     arbitrator: klerosLiquid[mainnet.chainId],
-    arbitratorExtraData: encodeExtraData(0, 31), // General Court - 31 jurors
+    arbitratorExtraData: encodeExtraData(oracleCourt[mainnet.chainId], 31), // General Court - 31 jurors
     // https://docs.unichain.org/docs/technical-information/contract-addresses
-    messenger: "FIXME",
+    messenger: "FIXME", // Not launched yet
     metaEvidence: "/ipfs/FIXME",
     multipliers: [winnerMultiplier, loserMultiplier, loserAppealPeriodMultiplier],
   },
-  mainnetOptimism: {
+  optimism: {
     arbitrator: klerosLiquid[mainnet.chainId],
-    arbitratorExtraData: encodeExtraData(0, 31), // General Court - 31 jurors
+    arbitratorExtraData: encodeExtraData(oracleCourt[mainnet.chainId], 31), // General Court - 31 jurors
     // https://docs.optimism.io/chain/addresses
     messenger: "0x25ace71c97B33Cc4729CF772ae268934F7ab5fA1",
-    metaEvidence: "/ipfs/FIXME",
+    metaEvidence: "/ipfs/QmaA3mXhvRxXFcmyF2zbF5CirJmK4xH2jVy7XBWBDprvxS",
     multipliers: [winnerMultiplier, loserMultiplier, loserAppealPeriodMultiplier],
   },
-  mainnetRedstone: {
+  redstone: {
     arbitrator: klerosLiquid[mainnet.chainId],
-    arbitratorExtraData: encodeExtraData(0, 31), // General Court - 31 jurors
+    arbitratorExtraData: encodeExtraData(oracleCourt[mainnet.chainId], 31), // General Court - 31 jurors
     // https://redstone.xyz/docs/contract-addresses
     messenger: "0x592C1299e0F8331D81A28C0FC7352Da24eDB444a",
     metaEvidence: "/ipfs/bafybeibho6gzezi7ludu6zxfzetmicho7ekuh3gu3oouihmbfsabhcg7te/",
@@ -59,22 +64,29 @@ const params = {
   },
 };
 
-async function deployForeignProxy({ deployments, getChainId, ethers, companionNetworks }) {
-  // Validate DEPLOYMENT environment variable
-  const deploymentName = process.env.DEPLOYMENT;
-  if (!deploymentName || !(deploymentName in params)) {
-    console.error(`Error: DEPLOYMENT environment variable must be one of: ${Object.keys(params).join(", ")}`);
-    process.exit(1);
-  }
+async function getHomeDeployments({ companionNetworks, homeNetworkName, config }) {
+  const homeChainId = config.networks[homeNetworkName].chainId;
+  let homeNetwork;
+  for await (const [key, network] of Object.entries(companionNetworks))
+    if (key.startsWith("home") && String(await network.getChainId()) === String(homeChainId)) homeNetwork = network;
+  if (!homeNetwork) throw new Error(`Home network ${homeNetworkName} not configured correctly`);
+  return homeNetwork.deployments;
+}
 
-  console.log("Starting foreign proxy deployment..");
+async function deployForeignProxy({ deployments, ethers, companionNetworks, config }) {
+  const homeNetworkName = process.env.HOME_NETWORK;
+  if (!homeNetworkName || !(homeNetworkName in params))
+    throw new Error(`Error: HOME_NETWORK environment variable must be one of: ${Object.keys(params).join(", ")}`);
+
+  console.log(
+    `Running deployment script for foreign proxy contract on ${network.name} for home proxy ${homeNetworkName}`
+  );
 
   const { deploy } = deployments;
-  const { arbitrator, arbitratorExtraData, messenger, metaEvidence, multipliers } = params[deploymentName];
+  const { arbitrator, arbitratorExtraData, messenger, metaEvidence, multipliers } = params[homeNetworkName];
   const [account] = await ethers.getSigners();
-  const homeProxy = await companionNetworks.homeUnichain.deployments
-    .get("RealitioHomeProxyRedStone")
-    .then((homeProxy) => homeProxy.address);
+  const homeDeployments = await getHomeDeployments({ companionNetworks, homeNetworkName, config });
+  const homeProxy = await homeDeployments.get("RealitioHomeProxyRedStone").then((homeProxy) => homeProxy.address);
 
   // Initially have the deployer as governor, and change it later
   const governor = (await ethers.getSigners())[0].address;

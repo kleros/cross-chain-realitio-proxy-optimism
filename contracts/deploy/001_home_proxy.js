@@ -46,11 +46,14 @@ const params = {
 };
 
 async function deployHomeProxy({ deployments, getChainId, ethers, config }) {
-  console.log(`Running deployment script for home proxy contract on RedStone/OP Sepolia`);
+  console.log(`Running deployment script for home proxy contract on ${network.name}`);
 
   const { deploy } = deployments;
   const chainId = await getChainId();
   const { realitio, metadata, messenger } = params[chainId];
+  if (!network.companionNetworks.foreign) {
+    throw new Error("Foreign network not configured in companion networks");
+  }
   const foreignNetwork = config.networks[network.companionNetworks.foreign];
   const provider = new ethers.JsonRpcProvider(foreignNetwork.url);
   const [account] = await ethers.getSigners();
