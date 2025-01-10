@@ -29,6 +29,7 @@ const params = {
     messenger: "0x448A37330A60494E666F6DD60aD48d930AEbA381",
     metaEvidence: "/ipfs/QmfFVUKfKjZyXPwcefpJqBbFaaA4GcZrzMnt3xH211ySKy",
     multipliers: [winnerMultiplier, loserMultiplier, loserAppealPeriodMultiplier],
+    family: `Unichain`,
   },
   optimismSepolia: {
     arbitrator: klerosLiquid[sepolia.chainId],
@@ -37,6 +38,7 @@ const params = {
     messenger: "0x58Cc85b8D04EA49cC6DBd3CbFFd00B4B8D6cb3ef",
     metaEvidence: "/ipfs/QmYj9PRtDV4HpNKXJbJ8AaYv5FBknNuSo4kjH2raHX47eM/",
     multipliers: [winnerMultiplier, loserMultiplier, loserAppealPeriodMultiplier],
+    family: `Optimism`,
   },
   unichain: {
     arbitrator: klerosLiquid[mainnet.chainId],
@@ -45,6 +47,7 @@ const params = {
     messenger: "FIXME", // Not launched yet
     metaEvidence: "/ipfs/FIXME",
     multipliers: [winnerMultiplier, loserMultiplier, loserAppealPeriodMultiplier],
+    family: `Unichain`,
   },
   optimism: {
     arbitrator: klerosLiquid[mainnet.chainId],
@@ -53,6 +56,7 @@ const params = {
     messenger: "0x25ace71c97B33Cc4729CF772ae268934F7ab5fA1",
     metaEvidence: "/ipfs/QmaA3mXhvRxXFcmyF2zbF5CirJmK4xH2jVy7XBWBDprvxS",
     multipliers: [winnerMultiplier, loserMultiplier, loserAppealPeriodMultiplier],
+    family: `Optimism`,
   },
   redstone: {
     arbitrator: klerosLiquid[mainnet.chainId],
@@ -61,6 +65,7 @@ const params = {
     messenger: "0x592C1299e0F8331D81A28C0FC7352Da24eDB444a",
     metaEvidence: "/ipfs/bafybeibho6gzezi7ludu6zxfzetmicho7ekuh3gu3oouihmbfsabhcg7te/",
     multipliers: [winnerMultiplier, loserMultiplier, loserAppealPeriodMultiplier],
+    family: `Redstone`,
   },
 };
 
@@ -83,10 +88,10 @@ async function deployForeignProxy({ deployments, ethers, companionNetworks, conf
   );
 
   const { deploy } = deployments;
-  const { arbitrator, arbitratorExtraData, messenger, metaEvidence, multipliers } = params[homeNetworkName];
+  const { arbitrator, arbitratorExtraData, messenger, metaEvidence, multipliers, family } = params[homeNetworkName];
   const [account] = await ethers.getSigners();
   const homeDeployments = await getHomeDeployments({ companionNetworks, homeNetworkName, config });
-  const homeProxy = await homeDeployments.get("RealitioHomeProxyOptimism").then((homeProxy) => homeProxy.address);
+  const homeProxy = await homeDeployments.get(`RealitioHomeProxy${family}`).then((homeProxy) => homeProxy.address);
 
   // Initially have the deployer as governor, and change it later
   const governor = (await ethers.getSigners())[0].address;
@@ -95,7 +100,8 @@ async function deployForeignProxy({ deployments, ethers, companionNetworks, conf
     `Args: messenger=${messenger}, homeProxy=${homeProxy}, governor=${governor}, arbitrator=${arbitrator}, arbitratorExtraData=${arbitratorExtraData}, metaEvidence=${metaEvidence}, multipliers=[${multipliers}]`
   );
 
-  const foreignProxy = await deploy("RealitioForeignProxyOptimism", {
+  const foreignProxy = await deploy(`RealitioForeignProxy${family}`, {
+    contract: "RealitioForeignProxyOptimism",
     from: account.address,
     args: [messenger, homeProxy, governor, arbitrator, arbitratorExtraData, metaEvidence, multipliers],
     waitConfirmations: 1,
