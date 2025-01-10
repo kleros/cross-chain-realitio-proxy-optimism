@@ -104,7 +104,6 @@ async function deployForeignProxy({ deployments, ethers, companionNetworks, conf
     contract: "RealitioForeignProxyOptimism",
     from: account.address,
     args: [messenger, homeProxy, governor, arbitrator, arbitratorExtraData, metaEvidence, multipliers],
-    waitConfirmations: 1,
   });
 
   console.log(
