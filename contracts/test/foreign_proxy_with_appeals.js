@@ -1441,11 +1441,11 @@ describe("Cross-chain arbitration with appeals", () => {
         );
 
         const ForeignProxy = await ethers.getContractFactory(
-            "RealitioForeignProxyRedStone",
+            "RealitioForeignProxyOptimism",
             signer
         );
         const HomeProxy = await ethers.getContractFactory(
-            "RealitioHomeProxyRedStone",
+            "RealitioHomeProxyOptimism",
             signer
         );
 

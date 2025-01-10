@@ -18,7 +18,7 @@ import {ICrossDomainMessenger} from "./interfaces/ICrossDomainMessenger.sol";
  * @title Arbitration proxy for Realitio on foreign chain (eg. mainnet).
  * @dev https://docs.optimism.io/builders/app-developers/bridging/messaging
  */
-contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResolver {
+contract RealitioForeignProxyOptimism is IForeignArbitrationProxy, IDisputeResolver {
     /* Constants */
     uint256 public constant NUMBER_OF_CHOICES_FOR_ARBITRATOR = type(uint256).max; // The number of choices for the arbitrator.
     uint256 public constant REFUSE_TO_ARBITRATE_REALITIO = type(uint256).max; // Constant that represents "Refuse to rule" in realitio format.
@@ -302,7 +302,7 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
     }
 
     /**
-     * @notice Cancels the arbitration in case the dispute could not be created. Requires a small deposit to cover RedStone fees.
+     * @notice Cancels the arbitration in case the dispute could not be created. Requires a small deposit to cover Optimism fees.
      * @param _questionID The ID of the question.
      * @param _requester The address of the arbitration requester.
      */
@@ -500,7 +500,7 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
     }
 
     /**
-     * @notice Relays the ruling to home proxy. Requires a small deposit to cover RedStone fees.
+     * @notice Relays the ruling to home proxy. Requires a small deposit to cover Optimism fees.
      * @param _questionID The ID of the question.
      * @param _requester The address of the arbitration requester.
      */

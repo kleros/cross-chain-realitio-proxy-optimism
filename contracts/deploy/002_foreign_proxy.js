@@ -86,7 +86,7 @@ async function deployForeignProxy({ deployments, ethers, companionNetworks, conf
   const { arbitrator, arbitratorExtraData, messenger, metaEvidence, multipliers } = params[homeNetworkName];
   const [account] = await ethers.getSigners();
   const homeDeployments = await getHomeDeployments({ companionNetworks, homeNetworkName, config });
-  const homeProxy = await homeDeployments.get("RealitioHomeProxyRedStone").then((homeProxy) => homeProxy.address);
+  const homeProxy = await homeDeployments.get("RealitioHomeProxyOptimism").then((homeProxy) => homeProxy.address);
 
   // Initially have the deployer as governor, and change it later
   const governor = (await ethers.getSigners())[0].address;
@@ -95,7 +95,7 @@ async function deployForeignProxy({ deployments, ethers, companionNetworks, conf
     `Args: messenger=${messenger}, homeProxy=${homeProxy}, governor=${governor}, arbitrator=${arbitrator}, arbitratorExtraData=${arbitratorExtraData}, metaEvidence=${metaEvidence}, multipliers=[${multipliers}]`
   );
 
-  const foreignProxy = await deploy("RealitioForeignProxyRedStone", {
+  const foreignProxy = await deploy("RealitioForeignProxyOptimism", {
     from: account.address,
     args: [messenger, homeProxy, governor, arbitrator, arbitratorExtraData, metaEvidence, multipliers],
     waitConfirmations: 1,

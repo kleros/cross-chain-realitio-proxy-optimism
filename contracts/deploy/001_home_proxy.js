@@ -70,13 +70,13 @@ async function deployHomeProxy({ deployments, getChainId, ethers, config }) {
     `Args: realitio=${realitio}, foreignChainId=${foreignNetwork.chainId}, foreignProxy=${foreignProxy}, metadata=${metadata}, messenger=${messenger}`
   );
 
-  const homeProxy = await deploy("RealitioHomeProxyRedStone", {
+  const homeProxy = await deploy("RealitioHomeProxyOptimism", {
     from: account.address,
     args: [realitio, foreignNetwork.chainId, foreignProxy, metadata, messenger],
     waitConfirmations: 1,
   });
   const contractAddress = homeProxy.address;
-  console.log(`RealitioHomeProxyRedStone was deployed to ${contractAddress}`);
+  console.log(`RealitioHomeProxyOptimism was deployed to ${contractAddress}`);
 
   await run("verify:verify", {
     address: homeProxy.address,
