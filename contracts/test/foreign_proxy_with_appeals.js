@@ -66,12 +66,10 @@ describe("Cross-chain arbitration with appeals", () => {
         // ForeignProxy
         expect(await foreignProxy.messenger()).to.equal(mockMessenger.target);
         expect(await foreignProxy.homeProxy()).to.equal(homeProxy.target);
-        expect(await foreignProxy.governor()).to.equal(governor.address);
         expect(await foreignProxy.arbitrator()).to.equal(arbitrator.target);
         expect(await foreignProxy.arbitratorExtraData()).to.equal(
             arbitratorExtraData
         );
-        expect(await foreignProxy.metaEvidenceUpdates()).to.equal(0);
 
         // 0 - winner, 1 - loser, 2 - loserAppealPeriod.
         const multipliers = await foreignProxy.getMultipliers();
@@ -87,60 +85,6 @@ describe("Cross-chain arbitration with appeals", () => {
             zeroPadValue(toBeHex(5), 32)
         );
         expect(await homeProxy.metadata()).to.equal(metadata);
-    });
-
-    it("Check governance requires", async() => {
-        await expect(
-            foreignProxy.connect(other).changeMessenger(ZeroAddress)
-        ).to.be.revertedWith("The caller must be the governor.");
-        await foreignProxy.connect(governor).changeMessenger(homeProxy.target);
-        expect(await foreignProxy.messenger()).to.equal(homeProxy.target);
-
-        await expect(
-            foreignProxy.connect(other).changeMinGasLimit(20000)
-        ).to.be.revertedWith("The caller must be the governor.");
-        await foreignProxy.connect(governor).changeMinGasLimit(20000);
-        expect(await foreignProxy.minGasLimit()).to.equal(20000);
-
-        await expect(
-            foreignProxy.connect(other).changeArbitrator(ZeroAddress, "0xff")
-        ).to.be.revertedWith("The caller must be the governor.");
-        await foreignProxy.connect(governor).changeArbitrator(ZeroAddress, "0xff");
-        expect(await foreignProxy.arbitrator()).to.equal(ZeroAddress);
-        expect(await foreignProxy.arbitratorExtraData()).to.equal("0xff");
-
-        await expect(
-            foreignProxy.connect(other).changeMetaevidence("ME2.0")
-        ).to.be.revertedWith("The caller must be the governor.");
-        await foreignProxy.connect(governor).changeMetaevidence("ME2.0");
-        expect(await foreignProxy.metaEvidenceUpdates()).to.equal(1);
-
-        await expect(
-            foreignProxy.connect(other).changeWinnerMultiplier(51)
-        ).to.be.revertedWith("The caller must be the governor.");
-        await foreignProxy.connect(governor).changeWinnerMultiplier(51);
-        expect(await foreignProxy.winnerMultiplier()).to.equal(51);
-
-        await expect(
-            foreignProxy.connect(other).changeGovernor(other.address)
-        ).to.be.revertedWith("The caller must be the governor.");
-        await foreignProxy.connect(governor).changeGovernor(other.address);
-        expect(await foreignProxy.governor()).to.equal(other.address);
-
-        // Governor is changed from now on
-        // other.address is governor
-
-        await expect(
-            foreignProxy.connect(governor).changeLoserMultiplier(25)
-        ).to.be.revertedWith("The caller must be the governor.");
-        await foreignProxy.connect(other).changeLoserMultiplier(25);
-        expect(await foreignProxy.loserMultiplier()).to.equal(25);
-
-        await expect(
-            foreignProxy.connect(governor).changeLoserAppealPeriodMultiplier(777)
-        ).to.be.revertedWith("The caller must be the governor.");
-        await foreignProxy.connect(other).changeLoserAppealPeriodMultiplier(777);
-        expect(await foreignProxy.loserAppealPeriodMultiplier()).to.equal(777);
     });
 
     it("Should set correct values when requesting arbitration and fire the event", async() => {
@@ -282,10 +226,7 @@ describe("Cross-chain arbitration with appeals", () => {
         expect(arbitration[1]).to.equal(0, "Deposit value should be empty");
         expect(arbitration[2]).to.equal(2, "Incorrect dispute ID");
 
-        const disputeData = await foreignProxy.arbitratorDisputeIDToDisputeDetails(
-            arbitrator.target,
-            2
-        );
+        const disputeData = await foreignProxy.disputeIDToDisputeDetails(2);
         expect(disputeData[0]).to.equal(
             0,
             "Incorrect arbitration ID in disputeData"
@@ -364,18 +305,6 @@ describe("Cross-chain arbitration with appeals", () => {
             await requester.getAddress()
         );
 
-        // Setup 2nd arbitrator and check how questions with different status handle it.
-        const Arbitrator = await ethers.getContractFactory(
-            "AutoAppealableArbitrator",
-            governor
-        );
-        const arbitrator2 = await Arbitrator.deploy(String(arbitrationCost));
-        await foreignProxy.changeArbitrator(
-            arbitrator2.target,
-            arbitratorExtraData
-        );
-
-        // Should use old arbitrator
         await expect(
                 foreignProxy.connect(other).submitEvidence(arbitrationID, "text")
             )
@@ -386,11 +315,6 @@ describe("Cross-chain arbitration with appeals", () => {
                 await other.getAddress(),
                 "text"
             );
-
-        // Use arbitration ID with None status. Should use new arbitrator
-        await expect(foreignProxy.connect(other).submitEvidence(1, "text2"))
-            .to.emit(foreignProxy, "Evidence")
-            .withArgs(arbitrator2.target, 1, await other.getAddress(), "text2");
     });
 
     it("Should cancel arbitration correctly", async() => {
@@ -1452,7 +1376,6 @@ describe("Cross-chain arbitration with appeals", () => {
         const foreignProxy = await ForeignProxy.deploy(
             mockMessenger.target,
             homeProxyAddress,
-            signer.address,
             arbitrator.target,
             arbitratorExtraData,
             metaEvidence, [winnerMultiplier, loserMultiplier, loserAppealPeriodMultiplier]
