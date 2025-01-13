@@ -51,15 +51,11 @@ async function deployForeignProxy({ deployments, getChainId, ethers, config }) {
     const homeProxy = ethers.getCreateAddress(transaction);
     console.log(`Home proxy: ${homeProxy}`);
 
-    // Initially have the deployer as governor, and change it later
-    const governor = (await ethers.getSigners())[0].address;
-
     const foreignProxy = await deploy("RealitioForeignProxyRedStone", {
         from: account.address,
         args: [
             messenger,
             homeProxy,
-            governor,
             arbitrator,
             arbitratorExtraData,
             metaEvidence, [winnerMultiplier, loserMultiplier, loserAppealPeriodMultiplier],
@@ -76,7 +72,6 @@ async function deployForeignProxy({ deployments, getChainId, ethers, config }) {
         constructorArguments: [
             messenger,
             homeProxy,
-            governor,
             arbitrator,
             arbitratorExtraData,
             metaEvidence, [winnerMultiplier, loserMultiplier, loserAppealPeriodMultiplier],

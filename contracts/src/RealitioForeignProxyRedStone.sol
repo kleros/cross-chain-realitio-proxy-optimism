@@ -23,6 +23,7 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
     uint256 public constant NUMBER_OF_CHOICES_FOR_ARBITRATOR = type(uint256).max; // The number of choices for the arbitrator.
     uint256 public constant REFUSE_TO_ARBITRATE_REALITIO = type(uint256).max; // Constant that represents "Refuse to rule" in realitio format.
     uint256 public constant MULTIPLIER_DIVISOR = 10000; // Divisor parameter for multipliers.
+    uint256 public constant META_EVIDENCE_ID = 0; // The ID of the MetaEvidence for disputes.
 
     /* Storage */
 
@@ -41,9 +42,6 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
         uint256 disputeID; // The ID of the dispute in arbitrator contract.
         uint256 answer; // The answer given by the arbitrator.
         Round[] rounds; // Tracks each appeal round of a dispute.
-        IArbitrator arbitrator; // The arbitrator trusted to solve disputes for this request.
-        bytes arbitratorExtraData; // The extra data for the trusted arbitrator of this request.
-        uint256 metaEvidenceID; // The meta evidence to be used in a dispute for this case.
     }
 
     struct DisputeDetails {
@@ -61,23 +59,20 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
     }
 
     // contract for L1 -> L2 communication
-    ICrossDomainMessenger public messenger;
-    uint32 public minGasLimit = 200000; // Gas limit of the transaction call on L2. Note that setting value too high results in high gas estimation fee (tested on Sepolia).
-
+    ICrossDomainMessenger public immutable messenger;
+    uint32 public immutable minGasLimit = 200000; // Gas limit of the transaction call on L2. Note that setting value too high results in high gas estimation fee (tested on Sepolia).
     address public immutable homeProxy; // Proxy on L2.
 
-    address public governor; // Governor of the contract (e.g KlerosGovernor).
-    IArbitrator public arbitrator; // The address of the arbitrator. TRUSTED.
+    IArbitrator public immutable arbitrator; // The address of the arbitrator. TRUSTED.
     bytes public arbitratorExtraData; // The extra data used to raise a dispute in the arbitrator.
-    uint256 public metaEvidenceUpdates; // The number of times the meta evidence has been updated. Used to track the latest meta evidence ID.
 
     // Multipliers are in basis points.
-    uint256 public winnerMultiplier; // Multiplier for calculating the appeal fee that must be paid for the answer that was chosen by the arbitrator in the previous round.
-    uint256 public loserMultiplier; // Multiplier for calculating the appeal fee that must be paid for the answer that the arbitrator didn't rule for in the previous round.
-    uint256 public loserAppealPeriodMultiplier; // Multiplier for calculating the duration of the appeal period for the loser, in basis points.
+    uint256 public immutable winnerMultiplier; // Multiplier for calculating the appeal fee that must be paid for the answer that was chosen by the arbitrator in the previous round.
+    uint256 public immutable loserMultiplier; // Multiplier for calculating the appeal fee that must be paid for the answer that the arbitrator didn't rule for in the previous round.
+    uint256 public immutable loserAppealPeriodMultiplier; // Multiplier for calculating the duration of the appeal period for the loser, in basis points.
 
     mapping(uint256 => mapping(address => ArbitrationRequest)) public arbitrationRequests; // Maps arbitration ID to its data. arbitrationRequests[uint(questionID)][requester].
-    mapping(address => mapping(uint256 => DisputeDetails)) public arbitratorDisputeIDToDisputeDetails; // Maps external dispute ids from a particular arbitrator to local arbitration ID and requester who was able to complete the arbitration request.
+    mapping(uint256 => DisputeDetails) public disputeIDToDisputeDetails; // Maps external dispute ids to local arbitration ID and requester who was able to complete the arbitration request.
     mapping(uint256 => bool) public arbitrationIDToDisputeExists; // Whether a dispute has already been created for the given arbitration ID or not.
 
     mapping(uint256 => address) public arbitrationIDToRequester; // Maps arbitration ID to the requester who was able to complete the arbitration request.
@@ -89,16 +84,10 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
         _;
     }
 
-    modifier onlyGovernor() {
-        require(msg.sender == governor, "The caller must be the governor.");
-        _;
-    }
-
     /**
      * @notice Creates an arbitration proxy on the foreign chain (L1).
      * @param _messenger contract for L1 -> L2 tx
      * @param _homeProxy Proxy on L2.
-     * @param _governor Governor of the contract.
      * @param _arbitrator Arbitrator contract address.
      * @param _arbitratorExtraData The extra data used to raise a dispute in the arbitrator.
      * @param _metaEvidence The URI of the meta evidence file.
@@ -110,7 +99,6 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
     constructor(
         address _messenger,
         address _homeProxy,
-        address _governor,
         IArbitrator _arbitrator,
         bytes memory _arbitratorExtraData,
         string memory _metaEvidence,
@@ -118,86 +106,13 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
     ) {
         messenger = ICrossDomainMessenger(_messenger);
         homeProxy = _homeProxy;
-        governor = _governor;
         arbitrator = _arbitrator;
         arbitratorExtraData = _arbitratorExtraData;
         winnerMultiplier = _multipliers[0];
         loserMultiplier = _multipliers[1];
         loserAppealPeriodMultiplier = _multipliers[2];
 
-        emit MetaEvidence(metaEvidenceUpdates, _metaEvidence);
-    }
-
-    // ********************************* //
-    // *    Governor Functions    * //
-    // ********************************* //
-    /**
-     * @notice Changes the L1 -> L2 MESSENGER contract.
-     * @param _messenger New MESSENGER address.
-     */
-    function changeMessenger(address _messenger) external onlyGovernor {
-        messenger = ICrossDomainMessenger(_messenger);
-    }
-
-    /**
-     * @notice Changes minimum gas limit for L1 -> L2 tx.
-     * @param _minGasLimit New minimum gas limit.
-     */
-    function changeMinGasLimit(uint32 _minGasLimit) external onlyGovernor {
-        minGasLimit = _minGasLimit;
-    }
-
-    /**
-     * @notice Changes the governor of the contract.
-     * @param _governor New governor address.
-     */
-    function changeGovernor(address _governor) external onlyGovernor {
-        governor = _governor;
-    }
-
-    /**
-     * @notice Changes the arbitrator and extradata. The arbitrator is trusted to support appeal period and not reenter.
-     * Note avoid changing arbitrator if there is an active arbitration request in Requested phase, otherwise evidence submitted during this phase
-     * will be submitted to the new arbitrator, while arbitration request will be processed by the old one.
-     * @param _arbitrator New arbitrator address.
-     * @param _arbitratorExtraData Extradata for the arbitrator
-     */
-    function changeArbitrator(IArbitrator _arbitrator, bytes calldata _arbitratorExtraData) external onlyGovernor {
-        arbitrator = _arbitrator;
-        arbitratorExtraData = _arbitratorExtraData;
-    }
-
-    /**
-     * @notice Updates the meta evidence used for disputes.
-     * @param _metaEvidence Metaevidence URI.
-     */
-    function changeMetaevidence(string memory _metaEvidence) external onlyGovernor {
-        metaEvidenceUpdates++;
-        emit MetaEvidence(metaEvidenceUpdates, _metaEvidence);
-    }
-
-    /**
-     * @notice Changes winner multiplier value.
-     * @param _winnerMultiplier New winner multiplier.
-     */
-    function changeWinnerMultiplier(uint256 _winnerMultiplier) external onlyGovernor {
-        winnerMultiplier = _winnerMultiplier;
-    }
-
-    /**
-     * @notice Changes loser multiplier value.
-     * @param _loserMultiplier New loser multiplier.
-     */
-    function changeLoserMultiplier(uint256 _loserMultiplier) external onlyGovernor {
-        loserMultiplier = _loserMultiplier;
-    }
-
-    /**
-     * @notice Changes loser multiplier for appeal period.
-     * @param _loserAppealPeriodMultiplier New loser multiplier for appeal perido.
-     */
-    function changeLoserAppealPeriodMultiplier(uint256 _loserAppealPeriodMultiplier) external onlyGovernor {
-        loserAppealPeriodMultiplier = _loserAppealPeriodMultiplier;
+        emit MetaEvidence(META_EVIDENCE_ID, _metaEvidence);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -214,10 +129,6 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
 
         ArbitrationRequest storage arbitration = arbitrationRequests[uint256(_questionID)][msg.sender];
         require(arbitration.status == Status.None, "Arbitration already requested");
-
-        arbitration.arbitrator = arbitrator;
-        arbitration.arbitratorExtraData = arbitratorExtraData;
-        arbitration.metaEvidenceID = metaEvidenceUpdates;
 
         bytes4 methodSelector = IHomeArbitrationProxy.receiveArbitrationRequest.selector;
         bytes memory data = abi.encodeWithSelector(methodSelector, _questionID, msg.sender, _maxPrevious);
@@ -242,17 +153,15 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
         ArbitrationRequest storage arbitration = arbitrationRequests[arbitrationID][_requester];
         require(arbitration.status == Status.Requested, "Invalid arbitration status");
 
-        uint256 arbitrationCost = arbitration.arbitrator.arbitrationCost(arbitration.arbitratorExtraData);
+        uint256 arbitrationCost = arbitrator.arbitrationCost(arbitratorExtraData);
         if (arbitration.deposit >= arbitrationCost) {
             try
-                arbitration.arbitrator.createDispute{value: arbitrationCost}(
+                arbitrator.createDispute{value: arbitrationCost}(
                     NUMBER_OF_CHOICES_FOR_ARBITRATOR,
-                    arbitration.arbitratorExtraData
+                    arbitratorExtraData
                 )
             returns (uint256 disputeID) {
-                DisputeDetails storage disputeDetails = arbitratorDisputeIDToDisputeDetails[
-                    address(arbitration.arbitrator)
-                ][disputeID];
+                DisputeDetails storage disputeDetails = disputeIDToDisputeDetails[disputeID];
                 disputeDetails.arbitrationID = arbitrationID;
                 disputeDetails.requester = _requester;
 
@@ -273,7 +182,7 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
                 }
 
                 emit ArbitrationCreated(_questionID, _requester, disputeID);
-                emit Dispute(arbitration.arbitrator, disputeID, arbitration.metaEvidenceID, arbitrationID);
+                emit Dispute(arbitrator, disputeID, META_EVIDENCE_ID, arbitrationID);
             } catch {
                 arbitration.status = Status.Failed;
                 emit ArbitrationFailed(_questionID, _requester);
@@ -343,12 +252,12 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
         require(arbitration.status == Status.Created, "No dispute to appeal.");
 
         uint256 disputeID = arbitration.disputeID;
-        (uint256 appealPeriodStart, uint256 appealPeriodEnd) = arbitration.arbitrator.appealPeriod(disputeID);
+        (uint256 appealPeriodStart, uint256 appealPeriodEnd) = arbitrator.appealPeriod(disputeID);
         require(block.timestamp >= appealPeriodStart && block.timestamp < appealPeriodEnd, "Appeal period is over.");
 
         uint256 multiplier;
         {
-            uint256 winner = arbitration.arbitrator.currentRuling(disputeID);
+            uint256 winner = arbitrator.currentRuling(disputeID);
             if (winner == _answer) {
                 multiplier = winnerMultiplier;
             } else {
@@ -364,7 +273,7 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
         uint256 lastRoundID = arbitration.rounds.length - 1;
         Round storage round = arbitration.rounds[lastRoundID];
         require(!round.hasPaid[_answer], "Appeal fee is already paid.");
-        uint256 appealCost = arbitration.arbitrator.appealCost(disputeID, arbitration.arbitratorExtraData);
+        uint256 appealCost = arbitrator.appealCost(disputeID, arbitratorExtraData);
         uint256 totalCost = appealCost + ((appealCost * multiplier) / MULTIPLIER_DIVISOR);
 
         // Take up to the amount necessary to fund the current round at the current costs.
@@ -387,7 +296,7 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
             arbitration.rounds.push();
 
             round.feeRewards = round.feeRewards - appealCost;
-            arbitration.arbitrator.appeal{value: appealCost}(disputeID, arbitration.arbitratorExtraData);
+            arbitrator.appeal{value: appealCost}(disputeID, arbitratorExtraData);
         }
 
         if (msg.value - contribution > 0) payable(msg.sender).send(msg.value - contribution); // Sending extra value back to contributor. It is the user's responsibility to accept ETH.
@@ -463,15 +372,7 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
      * @param _evidenceURI Link to evidence.
      */
     function submitEvidence(uint256 _arbitrationID, string calldata _evidenceURI) external override {
-        address requester = arbitrationIDToRequester[_arbitrationID];
-        ArbitrationRequest storage arbitration = arbitrationRequests[_arbitrationID][requester];
-        if (address(arbitration.arbitrator) == address(0)) {
-            // None or Requested status.
-            // Note that arbitrator set during requestArbitration might differ from default arbitrator, if default arbitrator was changed during Requested status.
-            emit Evidence(arbitrator, _arbitrationID, msg.sender, _evidenceURI);
-        } else {
-            emit Evidence(arbitration.arbitrator, _arbitrationID, msg.sender, _evidenceURI);
-        }
+        emit Evidence(arbitrator, _arbitrationID, msg.sender, _evidenceURI);
     }
 
     /**
@@ -481,12 +382,12 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
      * @param _ruling The ruling given by the arbitrator.
      */
     function rule(uint256 _disputeID, uint256 _ruling) external override {
-        DisputeDetails storage disputeDetails = arbitratorDisputeIDToDisputeDetails[msg.sender][_disputeID];
+        DisputeDetails storage disputeDetails = disputeIDToDisputeDetails[_disputeID];
         uint256 arbitrationID = disputeDetails.arbitrationID;
         address requester = disputeDetails.requester;
 
         ArbitrationRequest storage arbitration = arbitrationRequests[arbitrationID][requester];
-        require(msg.sender == address(arbitration.arbitrator), "Only arbitrator allowed");
+        require(msg.sender == address(arbitrator), "Only arbitrator allowed");
         require(arbitration.status == Status.Created, "Invalid arbitration status");
         uint256 finalRuling = _ruling;
 
@@ -698,11 +599,6 @@ contract RealitioForeignProxyRedStone is IForeignArbitrationProxy, IDisputeResol
      * @return localDisputeID Dispute id as in arbitrable contract.
      */
     function externalIDtoLocalID(uint256 _externalDisputeID) external view override returns (uint256) {
-        // Note that in case of arbitrator's change external dispute from the new arbitrator
-        // will overwrite the external dispute with the same ID from the old arbitrator,
-        // which will make the data related to the old arbitrator's dispute unaccessible in DisputeResolver's UI.
-        // It should be fine since the dispute will be closed anyway.
-        // Ideally we would want to have arbitrator's address as one of the parameters, but we can't break the interface.
-        return arbitratorDisputeIDToDisputeDetails[address(arbitrator)][_externalDisputeID].arbitrationID;
+        return disputeIDToDisputeDetails[_externalDisputeID].arbitrationID;
     }
 }
