@@ -93,17 +93,14 @@ async function deployForeignProxy({ deployments, ethers, companionNetworks, conf
   const homeDeployments = await getHomeDeployments({ companionNetworks, homeNetworkName, config });
   const homeProxy = await homeDeployments.get(`RealitioHomeProxy${family}`).then((homeProxy) => homeProxy.address);
 
-  // Initially have the deployer as governor, and change it later
-  const governor = (await ethers.getSigners())[0].address;
-
   console.log(
-    `Args: messenger=${messenger}, homeProxy=${homeProxy}, governor=${governor}, arbitrator=${arbitrator}, arbitratorExtraData=${arbitratorExtraData}, metaEvidence=${metaEvidence}, multipliers=[${multipliers}]`
+    `Args: messenger=${messenger}, homeProxy=${homeProxy}, arbitrator=${arbitrator}, arbitratorExtraData=${arbitratorExtraData}, metaEvidence=${metaEvidence}, multipliers=[${multipliers}]`
   );
 
   const foreignProxy = await deploy(`RealitioForeignProxy${family}`, {
     contract: "RealitioForeignProxyOptimism",
     from: account.address,
-    args: [messenger, homeProxy, governor, arbitrator, arbitratorExtraData, metaEvidence, multipliers],
+    args: [messenger, homeProxy, arbitrator, arbitratorExtraData, metaEvidence, multipliers],
   });
 
   console.log(
@@ -113,7 +110,7 @@ async function deployForeignProxy({ deployments, ethers, companionNetworks, conf
 
   await run("verify:verify", {
     address: foreignProxy.address,
-    constructorArguments: [messenger, homeProxy, governor, arbitrator, arbitratorExtraData, metaEvidence, multipliers],
+    constructorArguments: [messenger, homeProxy, arbitrator, arbitratorExtraData, metaEvidence, multipliers],
   });
 }
 
