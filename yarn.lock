@@ -2696,7 +2696,6 @@ __metadata:
   resolution: "@kleros/cross-chain-realitio-script@workspace:dynamic-script"
   dependencies:
     "@kleros/cross-chain-realitio-contracts": ~0.5.0
-    "@kleros/file-to-ipfs": ^0.1.0
     "@realitio/realitio-lib": ^1.0.2
     clean-webpack-plugin: ^3.0.0
     dotenv-webpack: ^4.0.0
@@ -2720,18 +2719,6 @@ __metadata:
   version: 8.0.0
   resolution: "@kleros/erc-792@npm:8.0.0"
   checksum: 83933929df92698eb3808f53e5e2eb911bdcb1cc9df648acddb513e461ccb64e3efc34c58c78070138c7c3be037dc6a85cfaa20bf6778131e2f59a32e3526eb6
-  languageName: node
-  linkType: hard
-
-"@kleros/file-to-ipfs@npm:^0.1.0":
-  version: 0.1.1
-  resolution: "@kleros/file-to-ipfs@npm:0.1.1"
-  dependencies:
-    node-fetch: ^2.6.0
-    yargs: ^16.2.0
-  bin:
-    file-to-ipfs: index.js
-  checksum: c82a82d05f69e49eb97b0ca1cbc761c37e94edf96c8d1fc23904962d0f4184c4f6d0375b094b783a30e70c090a9f23d1f2c53aea606b7eb1ba4f16325efe4358
   languageName: node
   linkType: hard
 
@@ -16286,7 +16273,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"node-fetch@npm:^2.6.0, node-fetch@npm:^2.6.7":
+"node-fetch@npm:^2.6.7":
   version: 2.7.0
   resolution: "node-fetch@npm:2.7.0"
   dependencies:

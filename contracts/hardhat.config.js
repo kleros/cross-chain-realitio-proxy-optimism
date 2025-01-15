@@ -59,6 +59,7 @@ module.exports = {
       companionNetworks: {
         homeUnichain: "unichain",
         homeOptimism: "optimism",
+        homeRedstone: "redstone",
       },
     },
     unichain: {

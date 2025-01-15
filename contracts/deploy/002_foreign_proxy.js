@@ -24,7 +24,7 @@ const loserAppealPeriodMultiplier = 5000;
 const params = {
   unichainSepolia: {
     arbitrator: klerosLiquid[sepolia.chainId],
-    arbitratorExtraData: encodeExtraData(oracleCourt[sepolia.chainId], 1), // General Court - 1 juror
+    arbitratorExtraData: encodeExtraData(oracleCourt[sepolia.chainId], 1), // Oracle Court - 1 juror
     // https://docs.unichain.org/docs/technical-information/contract-addresses
     messenger: "0x448A37330A60494E666F6DD60aD48d930AEbA381",
     metaEvidence: "/ipfs/QmfFVUKfKjZyXPwcefpJqBbFaaA4GcZrzMnt3xH211ySKy",
@@ -33,7 +33,7 @@ const params = {
   },
   optimismSepolia: {
     arbitrator: klerosLiquid[sepolia.chainId],
-    arbitratorExtraData: encodeExtraData(oracleCourt[sepolia.chainId], 1), // General Court - 1 juror
+    arbitratorExtraData: encodeExtraData(oracleCourt[sepolia.chainId], 1), // Oracle Court - 1 juror
     // https://docs.optimism.io/chain/addresses
     messenger: "0x58Cc85b8D04EA49cC6DBd3CbFFd00B4B8D6cb3ef",
     metaEvidence: "/ipfs/QmYj9PRtDV4HpNKXJbJ8AaYv5FBknNuSo4kjH2raHX47eM/",
@@ -42,7 +42,7 @@ const params = {
   },
   unichain: {
     arbitrator: klerosLiquid[mainnet.chainId],
-    arbitratorExtraData: encodeExtraData(oracleCourt[mainnet.chainId], 31), // General Court - 31 jurors
+    arbitratorExtraData: encodeExtraData(oracleCourt[mainnet.chainId], 7), // Oracle Court - 7 jurors
     // https://docs.unichain.org/docs/technical-information/contract-addresses
     messenger: "FIXME", // Not launched yet
     metaEvidence: "/ipfs/FIXME",
@@ -51,7 +51,7 @@ const params = {
   },
   optimism: {
     arbitrator: klerosLiquid[mainnet.chainId],
-    arbitratorExtraData: encodeExtraData(oracleCourt[mainnet.chainId], 31), // General Court - 31 jurors
+    arbitratorExtraData: encodeExtraData(oracleCourt[mainnet.chainId], 7), // Oracle Court - 7 jurors
     // https://docs.optimism.io/chain/addresses
     messenger: "0x25ace71c97B33Cc4729CF772ae268934F7ab5fA1",
     metaEvidence: "/ipfs/QmaA3mXhvRxXFcmyF2zbF5CirJmK4xH2jVy7XBWBDprvxS",
@@ -60,7 +60,7 @@ const params = {
   },
   redstone: {
     arbitrator: klerosLiquid[mainnet.chainId],
-    arbitratorExtraData: encodeExtraData(oracleCourt[mainnet.chainId], 31), // General Court - 31 jurors
+    arbitratorExtraData: encodeExtraData(oracleCourt[mainnet.chainId], 7), // Oracle Court - 7 jurors
     // https://redstone.xyz/docs/contract-addresses
     messenger: "0x592C1299e0F8331D81A28C0FC7352Da24eDB444a",
     metaEvidence: "/ipfs/bafybeibho6gzezi7ludu6zxfzetmicho7ekuh3gu3oouihmbfsabhcg7te/",
