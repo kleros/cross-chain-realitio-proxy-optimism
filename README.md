@@ -1,5 +1,7 @@
 # Cross-chain Reality Proxy Optimism
 
+### ⚠️ The content has been moved to [kleros/cross-chain-realitio-proxy](https://github.com/kleros/cross-chain-realitio-proxy)
+
 ## Developer Guide
 
 ### Adding support for a new Optimism chain
